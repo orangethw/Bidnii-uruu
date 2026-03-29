@@ -6,84 +6,161 @@
 <title>Бидний өрөө</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
-
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root { --text-main: #242424; --text-muted: #6b6b6b; --bg-main: #ffffff; --bg-sec: #f9f9f9; --border: #e6e6e6; --accent: #111111; --accent-hover: #444444; }
+  :root {
+    --text-main: #242424;
+    --text-muted: #6b6b6b;
+    --bg-main: #ffffff;
+    --bg-sec: #f9f9f9;
+    --border: #e6e6e6;
+    --accent: #111111;
+    --accent-hover: #444444;
+  }
   body { font-family: 'Inter', sans-serif; background: var(--bg-main); color: var(--text-main); min-height: 100vh; line-height: 1.6; }
 
   /* Header & Navigation */
   header { background: var(--bg-main); padding: 0 2rem; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
   .header-top { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 0; border-bottom: 1px solid var(--border); }
+  
   .logo-container { cursor: pointer; display: inline-block; }
   .logo { font-family: 'Lora', serif; font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); }
   .logo span { font-style: italic; font-weight: 500; color: var(--text-muted); }
   .logo-sub { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; font-weight: 500; }
+  
   .header-date { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.05em; font-weight: 500; }
   .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+  
   .btn { padding: 0.5rem 1.2rem; border-radius: 4px; border: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; }
   .btn-outline { background: transparent; border: 1px solid var(--text-main); color: var(--text-main); }
   .btn-outline:hover { background: var(--text-main); color: var(--bg-main); }
+  
   nav { display: flex; gap: 2rem; padding: 1rem 0; overflow-x: auto; scrollbar-width: none; }
   nav::-webkit-scrollbar { display: none; }
   nav a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; letter-spacing: 0.05em; white-space: nowrap; transition: color 0.2s; cursor: pointer; font-weight: 500; text-transform: uppercase; }
   nav a:hover, nav a.active { color: var(--accent); font-weight: 600; }
 
-  /* Banner */
+  /* Banner Slider */
   .banner { position: relative; height: 500px; overflow: hidden; background: var(--bg-sec); }
   .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; display: flex; align-items: center; justify-content: center; }
   .slide.active { opacity: 1; z-index: 1; }
   .slide-img { position: absolute; inset: 0; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 7rem; }
   .slide-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4); }
+  
   .slide-content { position: relative; z-index: 2; padding: 2.5rem; max-width: 800px; text-align: center; cursor: pointer; }
   .slide-tag { display: inline-block; font-size: 0.75rem; letter-spacing: 0.1em; padding: 0.4rem 0.8rem; margin-bottom: 1rem; color: #fff; border: 1px solid rgba(255,255,255,0.5); text-transform: uppercase; border-radius: 2px; }
   .slide-title { font-family: 'Lora', serif; font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 700; color: #fff; line-height: 1.3; margin-bottom: 1rem; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
   .slide-meta { font-size: 0.85rem; color: rgba(255,255,255,0.8); font-weight: 500; }
+  
   .banner-nav { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.6rem; z-index: 10; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); border: none; cursor: pointer; transition: all 0.3s; padding: 0; }
   .dot.active { background: #fff; transform: scale(1.3); }
+  
+  .banner-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: rgba(255,255,255,0.7); width: 50px; height: 50px; cursor: pointer; font-size: 2rem; z-index: 10; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+  .banner-arrow:hover { color: #fff; }
+  .arrow-left { left: 1rem; }
+  .arrow-right { right: 1rem; }
 
-  /* Grid & Cards */
+  /* Main Content & Grid */
   .section-label { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-main); font-weight: 600; padding: 1.5rem 0 0.5rem; max-width: 1200px; margin: 0 auto; border-bottom: 1px solid var(--border); }
   main { max-width: 1200px; margin: 0 auto; padding: 2.5rem 0; }
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem 2rem; }
-  .card { cursor: pointer; }
+
+  /* Article Cards */
+  .card { cursor: pointer; group; }
+  .card:hover .card-title { color: var(--text-muted); }
+  .card:hover .card-img { transform: scale(1.03); }
+  
   .card-img-wrapper { overflow: hidden; border-radius: 4px; margin-bottom: 1.2rem; }
   .card-img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; transition: transform 0.4s ease; }
-  .card-img-placeholder { width: 100%; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; background: var(--bg-sec); }
+  .card-img-placeholder { width: 100%; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; background: var(--bg-sec); transition: transform 0.4s ease; }
+  
   .card-tag { font-size: 0.7rem; letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.5rem; }
-  .card-title { font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 700; line-height: 1.4; margin-bottom: 0.6rem; color: var(--text-main); }
+  .card-title { font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 700; line-height: 1.4; margin-bottom: 0.6rem; transition: color 0.2s; color: var(--text-main); }
   .card-excerpt { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-meta { font-size: 0.8rem; color: #999; font-weight: 500; }
+  
   .card-featured { grid-column: span 2; display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: center; }
+  .card-featured .card-title { font-size: 1.8rem; }
+  .card-featured .card-excerpt { font-size: 1.05rem; -webkit-line-clamp: 4; }
+  .card-featured .card-img-placeholder, .card-featured .card-img { aspect-ratio: 4/3; }
 
   /* Article View */
   .article-view { display: none; }
   .article-view.open { display: block; animation: fadeIn 0.4s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  
   .article-header { max-width: 800px; margin: 0 auto 2.5rem; text-align: center; }
-  .article-title-h { font-family: 'Lora', serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 700; line-height: 1.2; margin-bottom: 1.5rem; }
-  .article-body { max-width: 700px; margin: 0 auto; font-family: 'Lora', serif; font-size: 1.15rem; line-height: 1.8; color: var(--text-main); }
+  .article-tag { display: inline-block; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--text-main); text-transform: uppercase; font-weight: 600; margin-bottom: 1rem; }
+  .article-title-h { font-family: 'Lora', serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 700; line-height: 1.2; margin-bottom: 1.5rem; color: var(--text-main); }
+  .article-subtitle { font-family: 'Lora', serif; font-size: 1.25rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 2rem; font-style: italic; }
+  .article-byline { display: flex; align-items: center; justify-content: center; gap: 0.8rem; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+  
+  .article-hero-wrapper { max-width: 1000px; margin: 0 auto 3rem; border-radius: 6px; overflow: hidden; }
+  .article-hero { width: 100%; max-height: 550px; object-fit: cover; display: block; }
+  .article-hero-placeholder { width: 100%; height: 400px; display: flex; align-items: center; justify-content: center; font-size: 5rem; background: var(--bg-sec); }
+  
+  .article-body { max-width: 700px; margin: 0 auto; font-family: 'Lora', serif; font-size: 1.15rem; line-height: 1.6; color: var(--text-main); }
+  .article-body p { margin-bottom: 0; }
 
-  /* Reactions & Comments */
-  .reactions { display: flex; gap: 1rem; margin: 3rem 0 2rem; justify-content: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 1.5rem 0; }
-  .react-btn { display: flex; align-items: center; gap: 0.5rem; background: var(--bg-sec); border: 1px solid var(--border); border-radius: 100px; padding: 0.5rem 1.2rem; cursor: pointer; transition: 0.2s; }
-  .react-btn.reacted { background: var(--text-main); color: #fff; }
+  /* Reactions */
+  .reactions { display: flex; gap: 1rem; margin: 3rem 0 2rem; flex-wrap: wrap; justify-content: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 1.5rem 0; }
+  .react-btn { display: flex; align-items: center; gap: 0.5rem; background: var(--bg-sec); border: 1px solid var(--border); border-radius: 100px; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 1.1rem; transition: all 0.2s; font-family: 'Inter', sans-serif; color: var(--text-main); }
+  .react-btn:hover { background: var(--border); }
+  .react-btn.reacted { background: var(--text-main); color: var(--bg-main); border-color: var(--text-main); }
+  .react-count { font-size: 0.9rem; font-weight: 600; }
+
+  /* Comments */
+  .comments-section { max-width: 700px; margin: 0 auto; padding-top: 1rem; }
+  .comments-title { font-family: 'Lora', serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
+  .comment-form textarea { width: 100%; min-height: 120px; padding: 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.95rem; resize: vertical; background: var(--bg-main); color: var(--text-main); }
+  .comment-form textarea:focus { outline: none; border-color: var(--text-muted); }
+  .comment-form-row { display: flex; gap: 1rem; margin-top: 1rem; }
+  .comment-form input { flex: 1; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.95rem; background: var(--bg-main); color: var(--text-main); }
+  .comment-form input:focus { outline: none; border-color: var(--text-muted); }
+  .btn-submit { padding: 0.7rem 1.5rem; background: var(--accent); color: var(--bg-main); border: none; border-radius: 4px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 500; transition: background 0.2s; white-space: nowrap; }
+  .btn-submit:hover { background: var(--accent-hover); }
+  
   .comment { padding: 1.5rem 0; border-bottom: 1px solid var(--border); }
+  .comment-author { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.3rem; }
+  .comment-date { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem; }
+  .comment-text { font-family: 'Lora', serif; font-size: 1.05rem; line-height: 1.7; }
+  
+  .back-btn { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; margin-bottom: 2.5rem; border: none; background: none; font-family: 'Inter', sans-serif; transition: color 0.2s; font-weight: 500; }
+  .back-btn:hover { color: var(--text-main); }
 
-  /* Admin */
+  /* Admin Panel */
   .admin-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
   .admin-overlay.open { display: flex; }
-  .admin-panel { background: #fff; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; border-radius: 8px; padding: 2.5rem; }
-  .admin-input, .admin-textarea, .admin-select { width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1.2rem; font-family: inherit; }
+  .admin-panel { background: var(--bg-main); width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; border-radius: 8px; padding: 3rem; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+  .admin-title { font-family: 'Lora', serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 2rem; }
+  .field-label { font-size: 0.85rem; color: var(--text-main); font-weight: 600; margin-bottom: 0.5rem; display: block; }
+  .admin-input, .admin-select { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--text-main); margin-bottom: 1.5rem; background: var(--bg-main); }
+  .admin-input:focus, .admin-select:focus, .admin-textarea:focus { outline: none; border-color: var(--text-muted); }
+  .admin-textarea { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Lora', serif; font-size: 1rem; color: var(--text-main); margin-bottom: 1.5rem; min-height: 200px; resize: vertical; background: var(--bg-main); }
+  .admin-row { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem; }
+  .btn-cancel { padding: 0.7rem 1.2rem; background: transparent; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-family: 'Inter', sans-serif; color: var(--text-muted); font-weight: 500; }
+  .btn-cancel:hover { border-color: var(--text-main); color: var(--text-main); }
+  
+  /* Footer & Extras */
+  footer { background: var(--bg-main); color: var(--text-muted); text-align: center; padding: 4rem 2rem; font-size: 0.9rem; margin-top: 5rem; border-top: 1px solid var(--border); }
+  footer strong { color: var(--text-main); font-weight: 600; }
+  .footer-tagline { font-family: 'Lora', serif; font-size: 1.1rem; color: var(--text-main); margin-top: 0.8rem; font-style: italic; }
 
-  footer { background: var(--bg-main); color: var(--text-muted); text-align: center; padding: 4rem 2rem; border-top: 1px solid var(--border); margin-top: 5rem; }
-  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 0.8rem 1.5rem; border-radius: 100px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000; }
-  .toast.show { opacity: 1; bottom: 3rem; }
+  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--text-main); color: var(--bg-main); padding: 0.8rem 1.5rem; border-radius: 100px; font-size: 0.9rem; font-weight: 500; z-index: 999; opacity: 0; transition: opacity 0.3s, bottom 0.3s; pointer-events: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .toast.show { opacity: 1; bottom: 2.5rem; }
+  .empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
+  .empty-state h3 { font-family: 'Lora', serif; font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main); }
 
-  @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } .card-featured { grid-column: span 1; grid-template-columns: 1fr; } }
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+    .card-featured { grid-column: span 1; grid-template-columns: 1fr; }
+    .banner { height: 400px; }
+    .slide-content { padding: 1.5rem; }
+    .header-top { flex-direction: column; gap: 1rem; align-items: center; text-align: center; }
+    .header-date { display: none; }
+    .admin-panel { padding: 1.5rem; }
+  }
 </style>
 </head>
 <body>
@@ -112,44 +189,62 @@
 
 <div class="banner" id="banner">
   <div id="banner-slides"></div>
+  <button class="banner-arrow arrow-left" onclick="changeSlide(-1)">&#8249;</button>
+  <button class="banner-arrow arrow-right" onclick="changeSlide(1)">&#8250;</button>
   <div class="banner-nav" id="banner-dots"></div>
 </div>
 
 <div class="article-view" id="article-view">
-  <main>
-    <button class="back-btn" onclick="goHome()" style="margin-bottom: 2rem; cursor: pointer; border: none; background: none;">← Буцах</button>
-    <div id="article-content-area"></div>
-    <div class="reactions" id="reactions-bar"></div>
+  <main style="padding-top: 2rem;">
+    <button class="back-btn" onclick="goHome()">&#8592; Буцах</button>
+    <div class="article-header" id="article-content"></div>
+    <div class="article-hero-wrapper" id="article-hero-container"></div>
+    <div class="article-body" id="article-body-text"></div>
+    <div style="max-width:700px;margin:0 auto;">
+      <div class="reactions" id="reactions-bar"></div>
+    </div>
     <div class="comments-section">
-      <h3 style="font-family: 'Lora', serif; margin-bottom: 1.5rem;">Хэлэлцүүлэг</h3>
+      <div class="comments-title">Хэлэлцүүлэг</div>
       <div class="comment-form">
-        <textarea id="comment-text" class="admin-textarea" placeholder="Санал бодлоо хуваалцаарай..."></textarea>
-        <input type="text" id="comment-name" class="admin-input" placeholder="Таны нэр (заавал биш)">
-        <button class="btn-submit btn" style="background: var(--accent); color: #fff;" onclick="submitComment()">Илгээх</button>
+        <textarea id="comment-text" placeholder="Санал бодлоо хуваалцаарай..."></textarea>
+        <div class="comment-form-row">
+          <input type="text" id="comment-name" placeholder="Таны нэр (заавал биш)">
+          <button class="btn-submit" onclick="submitComment()">Сэтгэгдэл үлдээх</button>
+        </div>
       </div>
-      <div id="comments-list" style="margin-top: 2rem;"></div>
+      <div id="comments-list" style="margin-top:2rem;"></div>
     </div>
   </main>
 </div>
 
 <div id="home-view">
   <div class="section-label" id="section-title">Сүүлийн нийтлэлүүд</div>
-  <main><div id="posts-grid"></div></main>
+  <main style="padding-top: 2rem;">
+    <div id="posts-grid"></div>
+  </main>
 </div>
 
 <div class="admin-overlay" id="admin-overlay">
-  <div class="admin-panel" id="admin-inner"></div>
+  <div class="admin-panel">
+    <div id="admin-inner"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <footer>
-  <p><strong>Бидний өрөө</strong> — 2026</p>
-  <p style="font-style: italic; margin-top: 0.5rem;">"Урлаг бол сэтгэлийн хэл"</p>
+  <p><strong>Бидний өрөө</strong> — Бүх эрх хуулиар хамгаалагдсан &copy; 2026</p>
+  <p class="footer-tagline">"Урлаг бол сэтгэлийн хэл"</p>
 </footer>
 
-<script>
-// 1. FIREBASE CONFIG (Таны өгсөн мэдээлэл)
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, getDocs, addDoc, updateDoc, onSnapshot,
+  query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyCz_I7-HpvD2D5zpje8BC9ayobGJG2R3R4",
   authDomain: "bidnii-uruu.firebaseapp.com",
@@ -160,234 +255,397 @@ const firebaseConfig = {
   measurementId: "G-67WK1E0X5W"
 };
 
-// 2. INITIALIZE
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
+// Make db and Firestore functions available globally
+window.db = db;
+window.fsCollection = collection;
+window.fsDoc = doc;
+window.fsAddDoc = addDoc;
+window.fsUpdateDoc = updateDoc;
+window.fsOnSnapshot = onSnapshot;
+window.fsQuery = query;
+window.fsOrderBy = orderBy;
+window.fsServerTimestamp = serverTimestamp;
+window.fsDocs = getDocs;
+</script>
+
+<script>
 let posts = [];
 let currentPost = null;
 let currentCat = 'Бүгд';
 let slideIndex = 0;
+let slideTimer = null;
 const ADMIN_PASSWORD = 'bidniiuroo2026';
+const EMOJI_PALETTE = ['🎨','📖','✒️','🌸','🖼️','📜','🌿','🪐','🕊️','🌙'];
+const BANNER_COLORS = ['#3a3a3a','#2c2c2c','#4a4a4a','#1f1f1f','#2a2a2a'];
+const MONTHS_MN = ['1-р сарын','2-р сарын','3-р сарын','4-р сарын','5-р сарын','6-р сарын','7-р сарын','8-р сарын','9-р сарын','10-р сарын','11-р сарын','12-р сарын'];
+const DAYS_MN = ['Ням','Даваа','Мягмар','Лхагва','Пүрэв','Баасан','Бямба'];
 
-// 3. LOAD DATA
+// Wait for Firebase module to load, then init
+function waitForFirebase(cb, retries = 30) {
+  if (window.db) { cb(); }
+  else if (retries > 0) { setTimeout(() => waitForFirebase(cb, retries - 1), 100); }
+  else { console.error('Firebase failed to load'); }
+}
+
 window.onload = () => {
   const now = new Date();
-  const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-  document.getElementById('header-date').textContent = now.toLocaleDateString('mn-MN', options);
+  document.getElementById('header-date').textContent = `${now.getFullYear()} оны ${MONTHS_MN[now.getMonth()]} ${now.getDate()}, ${DAYS_MN[now.getDay()]} гариг`;
+  showToast('Өгөгдөл ачааллаж байна...');
 
-  // Real-time listener
-  db.collection("posts").orderBy("date", "desc").onSnapshot((snapshot) => {
-    posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderAll();
-    if(currentPost) {
-      currentPost = posts.find(p => p.id === currentPost.id);
-      renderReactions();
-      renderComments();
-    }
+  waitForFirebase(() => {
+    // Real-time listener — auto-updates the page for all users
+    const q = window.fsQuery(window.fsCollection(window.db, 'posts'), window.fsOrderBy('date', 'desc'));
+    window.fsOnSnapshot(q, (snapshot) => {
+      posts = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+      if (posts.length === 0) {
+        seedPosts();
+      } else {
+        renderAll();
+      }
+    });
   });
 };
 
-function renderAll() {
-  renderBanner();
+async function seedPosts() {
+  const samples = [
+    {
+      title: 'Монгол шүлгийн уламжлал ба орчин үе',
+      category: 'Яруу найраг',
+      excerpt: 'Монгол шүлгийн урт удаан түүх, нүүдлийн соёл иргэншлийн гүн гүнзгий уламжлал орчин үеийн залуу яруу найрагчдад хэрхэн амьд үргэлжилж байна вэ?',
+      body: 'Монгол шүлгийн үндэс нь нүүдлийн тал нутагт оршдог.\nМорины туурайн дуу, салхины исгэрээ,\nгэрийн дулаан — эдгээр нь монгол яруу найрагчдын сэтгэлийн хамгийн гүн давхаргад хэвтэж буй дүрс юм.\n\nОрчин үеийн залуу яруу найрагчид уламжлалт хэлбэрийг шинэ утга санааны хэрэгслэл болгон ашиглаж байна.\nТоогоор бичсэн шүлэг, чөлөөт хэмжүүр,\nорчин цагийн хот суурин амьдралын дүрслэл —\nбүгд хуучин суурин дээр шинэ байшин барьж байгаа мэт.\n\n"Шүлэг бол цагийн хөшиг" гэж нэрт яруу найрагч хэлсэн байдаг.\nТэрхүү хөшиг өнөөдөр ч хөдөлж, шинэ агаар орж байна.',
+      emoji: '✒️', color: '#3a3a3a', reactions: {like:24,love:18,wow:6}, comments: []
+    },
+    {
+      title: 'Достоевскийн "Ах дүү Карамазов" — хүний сүнсний нэвтэрхий толь',
+      category: 'Уран зохиол',
+      excerpt: 'Орос уран зохиолын алтан санд багтах энэхүү бүтээл нь нүгэл, уучлал, итгэл үнэмшлийн асуудлыг хэрхэн гэрэлтүүлж байна вэ?',
+      body: 'Достоевскийн сүүлчийн бөгөөд хамгийн төлөвшсөн роман "Ах дүү Карамазов" нь зөвхөн нэг гэр бүлийн түүх биш — энэ бол хүн төрөлхтний оюун санааны хямралын дүрслэл юм.\n\nДмитрий, Иван, Алёша — гурван ах дүү нь хүний мөн чанарын гурван өөр хэлбэрийг төлөөлнө. Мах бялуу хүсэл эрмэлзэл, оюуны эргэлзэл, сүнслэг итгэл — эдгээр нь манай өдөр тутмын амьдралд ч байдаг тэмцэл юм.\n\nУншихад хэцүү мэт санагдавч, нэг удаа эхэлбэл Достоевский таныг суллахгүй. Учир нь тэр таны дотоод ертөнцийн тухай ярьж байдаг.',
+      emoji: '📖', color: '#2c2c2c', reactions: {like:31,love:22,wow:9}, comments: [{name:'Ундрах',text:'Энэ номыг гурав дахин уншсан. Удаа бүр өөр зүйл олж хардаг.',date:'1 цагийн өмнө'}]
+    },
+    {
+      title: 'Уран зургийн хэл: дүрс ба санааны хооронд',
+      category: 'Уран зураг',
+      excerpt: 'Уран зураг үг хэрэглэдэггүй боловч хэлдэг. Монгол уран зурагчдын бүтээлд байгаль, хүн, сансар хэрхэн нэгддэг вэ.',
+      body: 'Уран зураг бол харагдахуйц хэлбэрт оруулсан мэдрэмж юм. Уран зурагч өнгө сойз барихдаа зөвхөн дүрс бус сэтгэл хөдлөлөө дамжуулдаг.\n\nМонгол уран зурагчдын бүтээлд тал нутгийн өргөн уудам, тэнгэрийн өнгө, нүүдэлчний чөлөөт сүнс давтагдан гарч ирдэг. Энийг санамсаргүй биш — энэ бол манай ард түмний хамгийн гүн үнэт зүйл.\n\nОрчин үеийн залуу уран зурагчид уламжлалт загварыг абстракт хэлбэртэй хослуулж, шинэ дүрслэлийн хэл бүтээж байна.',
+      emoji: '🎨', color: '#1f1f1f', reactions: {like:15,love:27,wow:4}, comments: []
+    },
+  ];
+  for (let i = 0; i < samples.length; i++) {
+    const s = samples[i];
+    await window.fsAddDoc(window.fsCollection(window.db, 'posts'), {
+      id: Date.now() + i,
+      date: new Date(Date.now() - i * 86400000 * 2).toISOString(),
+      imageUrl: '',
+      ...s
+    });
+  }
+}
+
+// Save a single post field update to Firestore
+async function savePostToFirestore(post) {
+  if (!post.firestoreId) return;
+  const { firestoreId, ...data } = post;
+  await window.fsUpdateDoc(window.fsDoc(window.db, 'posts', firestoreId), data);
+}
+
+function renderAll() { renderBanner(); renderGrid(); }
+
+function goHome() {
+  currentCat = 'Бүгд';
+  updateNavState();
+  closeArticle();
   renderGrid();
+  document.getElementById('section-title').textContent = 'Сүүлийн нийтлэлүүд';
 }
 
 function renderBanner() {
   const slidesEl = document.getElementById('banner-slides');
   const dotsEl = document.getElementById('banner-dots');
-  const featured = posts.slice(0, 5);
+  const featured = posts.slice(0,5);
   if (!featured.length) {
-    slidesEl.innerHTML = '<div class="slide active"><div class="slide-overlay"></div><div class="slide-content"><div class="slide-title">Тавтай морил</div></div></div>';
+    slidesEl.innerHTML = '<div class="slide active"><div class="slide-overlay"></div><div class="slide-content"><div class="slide-title">Бидний өрөөнд тавтай морил</div></div></div>';
     return;
   }
-  slidesEl.innerHTML = featured.map((p, i) => `
-    <div class="slide ${i === slideIndex ? 'active' : ''}">
-      <div class="slide-img" style="background-color:${p.color || '#333'}; ${p.imageUrl ? `background-image:url('${p.imageUrl}')` : ''}">${p.imageUrl ? '' : (p.emoji || '📖')}</div>
+  slidesEl.innerHTML = featured.map((p,i) => `
+    <div class="slide ${i===0?'active':''}" id="slide-${i}">
+      <div class="slide-img" style="background-color:${p.color||'#2c2c2c'};${p.imageUrl?`background-image:url('${p.imageUrl}')`:''}">${p.imageUrl?'':p.emoji||'📖'}</div>
       <div class="slide-overlay"></div>
-      <div class="slide-content" onclick="openArticle('${p.id}')">
+      <div class="slide-content" onclick="openArticle(${p.id})">
         <div class="slide-tag">${p.category}</div>
         <div class="slide-title">${p.title}</div>
+        <div class="slide-meta">${formatDate(p.date)}</div>
       </div>
     </div>`).join('');
-  dotsEl.innerHTML = featured.map((_, i) => `<button class="dot ${i === slideIndex ? 'active' : ''}" onclick="goSlide(${i})"></button>`).join('');
+  dotsEl.innerHTML = featured.map((_,i) => `<button class="dot ${i===0?'active':''}" onclick="goSlide(${i})"></button>`).join('');
+  clearInterval(slideTimer);
+  slideTimer = setInterval(() => changeSlide(1), 6000);
+}
+
+function changeSlide(dir) {
+  const count = Math.min(posts.length, 5);
+  if (!count) return;
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.querySelectorAll('.dot');
+  slides[slideIndex]?.classList.remove('active');
+  dots[slideIndex]?.classList.remove('active');
+  slideIndex = (slideIndex + dir + count) % count;
+  slides[slideIndex]?.classList.add('active');
+  dots[slideIndex]?.classList.add('active');
+}
+function goSlide(i) { const prev = slideIndex; slideIndex = i - 1; changeSlide(i > prev ? 1 : -1); }
+
+function updateNavState() {
+  const links = document.querySelectorAll('#main-nav a');
+  links.forEach(link => {
+    if(link.textContent === currentCat) link.classList.add('active');
+    else link.classList.remove('active');
+  });
+}
+
+function filterCat(cat) { 
+  currentCat = cat; 
+  updateNavState();
+  closeArticle();
+  renderGrid(); 
+  document.getElementById('section-title').textContent = cat === 'Бүгд' ? 'Сүүлийн нийтлэлүүд' : cat;
 }
 
 function renderGrid() {
   const el = document.getElementById('posts-grid');
   const filtered = currentCat === 'Бүгд' ? posts : posts.filter(p => p.category === currentCat);
   if (!filtered.length) {
-    el.innerHTML = '<div class="empty-state" style="text-align:center; padding: 3rem;">Нийтлэл байхгүй байна.</div>';
+    el.innerHTML = '<div class="empty-state"><h3>Нийтлэл байхгүй байна</h3><p>Энэ ангиллын эхний нийтлэлийг та бичээрэй!</p></div>';
     return;
   }
-  el.innerHTML = `<div class="grid">${filtered.map((p, i) => i === 0 && currentCat === 'Бүгд' ? featuredCard(p) : smallCard(p)).join('')}</div>`;
+  el.innerHTML = `<div class="grid">${filtered.map((p,i) => i===0 && currentCat === 'Бүгд' ? featuredCard(p) : smallCard(p)).join('')}</div>`;
 }
 
 function featuredCard(p) {
-  return `<div class="card card-featured" onclick="openArticle('${p.id}')">
+  return `<div class="card card-featured" onclick="openArticle(${p.id})">
     <div class="card-img-wrapper">
-      <div class="card-img-placeholder" style="background:${p.color || '#eee'}; color:#fff;">${p.imageUrl ? `<img src="${p.imageUrl}" class="card-img">` : (p.emoji || '📖')}</div>
+      <div class="card-img-placeholder" style="background:${p.color||'#f4f4f4'}; color:${p.imageUrl?'inherit':'#fff'}">${p.imageUrl?`<img src="${p.imageUrl}" class="card-img">`:p.emoji||'📖'}</div>
     </div>
-    <div>
+    <div class="card-body">
       <div class="card-tag">${p.category}</div>
       <div class="card-title">${p.title}</div>
       <div class="card-excerpt">${p.excerpt}</div>
+      <div class="card-meta">${formatDate(p.date)}</div>
     </div>
   </div>`;
 }
 
 function smallCard(p) {
-  return `<div class="card" onclick="openArticle('${p.id}')">
+  return `<div class="card" onclick="openArticle(${p.id})">
     <div class="card-img-wrapper">
-      <div class="card-img-placeholder" style="background:${p.color || '#eee'}; color:#fff;">${p.imageUrl ? `<img src="${p.imageUrl}" class="card-img">` : (p.emoji || '📖')}</div>
+      <div class="card-img-placeholder" style="background:${p.color||'#f4f4f4'}; color:${p.imageUrl?'inherit':'#fff'}">${p.imageUrl?`<img src="${p.imageUrl}" class="card-img">`:p.emoji||'📖'}</div>
     </div>
-    <div class="card-tag">${p.category}</div>
-    <div class="card-title">${p.title}</div>
-    <div class="card-excerpt">${p.excerpt}</div>
+    <div class="card-body">
+      <div class="card-tag">${p.category}</div>
+      <div class="card-title">${p.title}</div>
+      <div class="card-excerpt">${p.excerpt}</div>
+      <div class="card-meta">${formatDate(p.date)}</div>
+    </div>
   </div>`;
 }
 
-// 4. ARTICLE ACTIONS
 function openArticle(id) {
   currentPost = posts.find(p => p.id === id);
+  if (!currentPost) return;
   document.getElementById('home-view').style.display = 'none';
   document.getElementById('banner').style.display = 'none';
   document.getElementById('article-view').classList.add('open');
-  
-  const p = currentPost;
-  document.getElementById('article-content-area').innerHTML = `
-    <div class="article-header">
-      <div class="article-tag">${p.category}</div>
-      <h1 class="article-title-h">${p.title}</h1>
-      <p style="font-style: italic; color: #666; margin-bottom: 2rem;">${p.excerpt}</p>
-    </div>
-    ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%; border-radius:8px; margin-bottom:2rem;">` : ''}
-    <div class="article-body">${p.body.replace(/\n/g, '<br>')}</div>
-  `;
-  renderReactions();
-  renderComments();
   window.scrollTo(0,0);
+  renderArticle();
 }
 
-function goHome() {
+function closeArticle() {
   document.getElementById('home-view').style.display = 'block';
   document.getElementById('banner').style.display = 'block';
   document.getElementById('article-view').classList.remove('open');
   currentPost = null;
 }
 
+function renderArticle() {
+  const p = currentPost;
+  document.getElementById('article-content').innerHTML = `
+    <div class="article-tag">${p.category}</div>
+    <h1 class="article-title-h">${p.title}</h1>
+    <p class="article-subtitle">${p.excerpt}</p>
+    <div class="article-byline">
+      <span>Бидний өрөө</span><span>·</span><span>${formatDate(p.date)}</span>
+    </div>
+  `;
+  document.getElementById('article-hero-container').innerHTML = p.imageUrl 
+    ? `<img src="${p.imageUrl}" class="article-hero">` 
+    : `<div class="article-hero-placeholder" style="background:${p.color||'#f4f4f4'}; color:#fff;">${p.emoji||'📖'}</div>`;
+    
+  document.getElementById('article-body-text').innerHTML = (p.body||'').replace(/\n/g, '<br>');
+  renderReactions();
+  renderComments();
+}
+
 function renderReactions() {
   const p = currentPost;
-  const reacts = p.reactions || { like: 0, love: 0, wow: 0 };
-  const storageKey = 'reacted_' + p.id;
-  const myReacts = JSON.parse(localStorage.getItem(storageKey) || '{}');
-  
-  document.getElementById('reactions-bar').innerHTML = ['like', 'love', 'wow'].map(type => {
-    const emojis = { like: '👍', love: '❤️', wow: '😮' };
-    return `<button class="react-btn ${myReacts[type] ? 'reacted' : ''}" onclick="handleReact('${type}')">
-      ${emojis[type]} <span>${reacts[type] || 0}</span>
-    </button>`;
-  }).join('');
+  const reacted = JSON.parse(localStorage.getItem('br_reacted_'+p.id)||'{}');
+  document.getElementById('reactions-bar').innerHTML = [
+    {key:'like',emoji:'👍'},{key:'love',emoji:'❤️'},{key:'wow',emoji:'😮'}
+  ].map(r => `<button class="react-btn ${reacted[r.key]?'reacted':''}" onclick="react('${r.key}')">
+    ${r.emoji} <span class="react-count">${p.reactions[r.key]||0}</span>
+  </button>`).join('');
 }
 
-async function handleReact(type) {
+async function react(type) {
   const p = currentPost;
-  const storageKey = 'reacted_' + p.id;
-  let myReacts = JSON.parse(localStorage.getItem(storageKey) || '{}');
-  let change = myReacts[type] ? -1 : 1;
-
-  await db.collection("posts").doc(p.id).update({
-    [`reactions.${type}`]: firebase.firestore.FieldValue.increment(change)
-  });
-
-  if (myReacts[type]) delete myReacts[type]; else myReacts[type] = true;
-  localStorage.setItem(storageKey, JSON.stringify(myReacts));
-}
-
-async function submitComment() {
-  const text = document.getElementById('comment-text').value.trim();
-  const name = document.getElementById('comment-name').value.trim() || "Нэргүй";
-  if(!text) return;
-
-  await db.collection("posts").doc(currentPost.id).update({
-    comments: firebase.firestore.FieldValue.arrayUnion({
-      name, text, date: new Date().toLocaleString('mn-MN')
-    })
-  });
-  document.getElementById('comment-text').value = '';
-  showToast("Сэтгэгдэл илгээгдлээ");
+  const key = 'br_reacted_'+p.id;
+  const reacted = JSON.parse(localStorage.getItem(key)||'{}');
+  if (reacted[type]) { p.reactions[type] = Math.max(0,(p.reactions[type]||0)-1); delete reacted[type]; }
+  else { p.reactions[type] = (p.reactions[type]||0)+1; reacted[type] = true; }
+  localStorage.setItem(key, JSON.stringify(reacted));
+  await savePostToFirestore(p);
+  renderReactions();
 }
 
 function renderComments() {
   const list = document.getElementById('comments-list');
   const comments = currentPost.comments || [];
-  list.innerHTML = comments.map(c => `
-    <div class="comment">
-      <div style="font-weight:600;">${c.name}</div>
-      <div style="font-size:0.8rem; color:#999; margin-bottom:0.5rem;">${c.date}</div>
-      <div>${c.text}</div>
-    </div>
-  `).join('') || "Сэтгэгдэл байхгүй байна.";
+  list.innerHTML = comments.length
+    ? comments.map(c => `<div class="comment">
+        <div class="comment-author">${c.name||'Нэргүй уншигч'}</div>
+        <div class="comment-date">${c.date}</div>
+        <div class="comment-text">${c.text}</div>
+      </div>`).join('')
+    : '<p style="color:var(--text-muted);font-size:0.95rem;text-align:center;padding:2rem 0;">Сэтгэгдэл байхгүй байна. Эхний сэтгэгдлийг та үлдээгээрэй!</p>';
 }
 
-// 5. ADMIN ACTIONS
+async function submitComment() {
+  const text = document.getElementById('comment-text').value.trim();
+  const name = document.getElementById('comment-name').value.trim();
+  if (!text) { showToast('Сэтгэгдэлээ бичнэ үү!'); return; }
+  if (!currentPost.comments) currentPost.comments = [];
+  currentPost.comments.push({ name: name||'Нэргүй', text, date: 'Дөнгөж сая' });
+  await savePostToFirestore(currentPost);
+  document.getElementById('comment-text').value = '';
+  document.getElementById('comment-name').value = '';
+  renderComments();
+  showToast('Сэтгэгдэл нийтлэгдлээ!');
+}
+
+let adminAuthed = false;
+
 function openAdmin() {
   document.getElementById('admin-overlay').classList.add('open');
-  renderLoginForm();
+  if (!adminAuthed) renderLoginForm();
+  else renderPostForm();
 }
 
 function renderLoginForm() {
   document.getElementById('admin-inner').innerHTML = `
-    <h2 class="admin-title">Нэвтрэх</h2>
-    <input type="password" id="pw-input" class="admin-input" placeholder="Нууц үг">
-    <div style="display:flex; gap:1rem;">
-      <button class="btn" onclick="checkPw()">Орох</button>
-      <button class="btn btn-outline" onclick="closeAdmin()">Болих</button>
-    </div>
-  `;
+    <div style="text-align:center;">
+      <h2 class="admin-title" style="margin-bottom:0.5rem;">Редакторын нэвтрэлт</h2>
+      <p style="color:var(--text-muted);margin-bottom:2rem;font-size:0.95rem;">Нийтлэл оруулахын тулд нууц үгээ оруулна уу</p>
+      <input class="admin-input" type="password" id="pw-input" placeholder="Нууц үг" onkeydown="if(event.key==='Enter')checkPw()" style="text-align:center;max-width:300px;margin:0 auto 1rem;">
+      <div style="font-size:0.85rem;color:var(--text-muted);">Анхны нууц үг: <strong>bidniiuroo2026</strong></div>
+      <div class="admin-row" style="margin-top:2rem;justify-content:center;">
+        <button class="btn-cancel" onclick="closeAdmin()">Болих</button>
+        <button class="btn-submit" onclick="checkPw()">Нэвтрэх</button>
+      </div>
+    </div>`;
+  setTimeout(() => document.getElementById('pw-input')?.focus(), 100);
 }
 
 function checkPw() {
-  if (document.getElementById('pw-input').value === ADMIN_PASSWORD) renderPostForm();
-  else showToast("Нууц үг буруу");
+  const pw = document.getElementById('pw-input')?.value;
+  if (pw === ADMIN_PASSWORD) { adminAuthed = true; renderPostForm(); }
+  else showToast('Нууц үг буруу байна!');
+}
+
+let chosenEmoji = '📖';
+function pickEmoji(e) {
+  chosenEmoji = e;
+  EMOJI_PALETTE.forEach(em => {
+    const b = document.getElementById('ep-'+em);
+    if(b) {
+      b.style.background = em===e ? 'var(--text-main)' : 'var(--bg-sec)';
+      b.style.borderColor = em===e ? 'var(--text-main)' : 'var(--border)';
+    }
+  });
 }
 
 function renderPostForm() {
   document.getElementById('admin-inner').innerHTML = `
-    <h2 class="admin-title">Шинэ нийтлэл</h2>
-    <input id="f-title" class="admin-input" placeholder="Гарчиг *">
-    <input id="f-excerpt" class="admin-input" placeholder="Товч агуулга *">
-    <select id="f-cat" class="admin-select">
-      <option>Уран зохиол</option><option>Яруу найраг</option><option>Эссэ</option>
-      <option>Философи</option><option>Уран зураг</option><option>Орчуулга</option>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
+      <div class="admin-title" style="margin:0">Шинэ нийтлэл</div>
+      <button style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);" onclick="closeAdmin()">&#x2715;</button>
+    </div>
+    <label class="field-label">Гарчиг *</label>
+    <input class="admin-input" id="f-title" placeholder="Нийтлэлийн гарчиг...">
+    <label class="field-label">Товч агуулга *</label>
+    <input class="admin-input" id="f-excerpt" placeholder="Нэг, хоёр өгүүлбэрээр тайлбарлана уу...">
+    <label class="field-label">Ангилал</label>
+    <select class="admin-select" id="f-cat">
+      <option>Уран зохиол</option>
+      <option>Яруу найраг</option>
+      <option>Эссэ</option>
+      <option>Философи</option>
+      <option>Уран зураг</option>
+      <option>Орчуулга</option>
     </select>
-    <textarea id="f-body" class="admin-textarea" style="height:200px" placeholder="Агуулга *"></textarea>
-    <input id="f-img" class="admin-input" placeholder="Зургийн URL (заавал биш)">
-    <button class="btn" onclick="publishPost()">Нийтлэх</button>
-  `;
+    <label class="field-label">Нийтлэлийн агуулга *</label>
+    <textarea class="admin-textarea" id="f-body" placeholder="Нийтлэлийнхээ бүтэн агуулгыг энд бичнэ үү. Шүлэг бичихдээ мөр шилжүүлэхийн тулд Enter дарна уу..."></textarea>
+    <label class="field-label">Зургийн холбоос (заавал биш)</label>
+    <input class="admin-input" id="f-img" placeholder="https://example.com/zurг.jpg">
+    <label class="field-label">Нүүр дүрс (зураг байхгүй бол)</label>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;">
+      ${EMOJI_PALETTE.map(e => `<button onclick="pickEmoji('${e}')" style="font-size:1.4rem;background:var(--bg-sec);border:1px solid var(--border);border-radius:4px;width:45px;height:45px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" id="ep-${e}">${e}</button>`).join('')}
+    </div>
+    <div class="admin-row">
+      <button class="btn-cancel" onclick="closeAdmin()">Болих</button>
+      <button class="btn-submit" onclick="publishPost()">✍ Нийтлэх</button>
+    </div>`;
 }
 
 async function publishPost() {
-  const post = {
-    title: document.getElementById('f-title').value,
-    excerpt: document.getElementById('f-excerpt').value,
-    category: document.getElementById('f-cat').value,
-    body: document.getElementById('f-body').value,
-    imageUrl: document.getElementById('f-img').value,
+  const title = document.getElementById('f-title').value.trim();
+  const excerpt = document.getElementById('f-excerpt').value.trim();
+  const body = document.getElementById('f-body').value.trim();
+  if (!title||!excerpt||!body) { showToast('Гарчиг, товч агуулга, бие агуулгыг бөглөнө үү!'); return; }
+  const newPost = {
+    id: Date.now(),
     date: new Date().toISOString(),
-    reactions: { like:0, love:0, wow:0 },
-    comments: [],
-    color: '#'+Math.floor(Math.random()*16777215).toString(16)
+    title, excerpt, body,
+    category: document.getElementById('f-cat').value,
+    imageUrl: document.getElementById('f-img').value.trim(),
+    emoji: chosenEmoji,
+    color: BANNER_COLORS[Math.floor(Math.random()*BANNER_COLORS.length)],
+    reactions: {like:0,love:0,wow:0},
+    comments: []
   };
-  await db.collection("posts").add(post);
+  showToast('Нийтлэж байна...');
+  await window.fsAddDoc(window.fsCollection(window.db, 'posts'), newPost);
   closeAdmin();
-  showToast("Амжилттай нийтлэгдлээ");
+  showToast('Нийтлэл амжилттай нийтлэгдлээ! ✓');
 }
 
 function closeAdmin() { document.getElementById('admin-overlay').classList.remove('open'); }
-function showToast(m) { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
-function filterCat(c) { currentCat=c; document.querySelectorAll('#main-nav a').forEach(a=>a.classList.toggle('active', a.textContent===c)); renderGrid(); }
-function goSlide(i) { slideIndex=i; renderBanner(); }
+
+function formatDate(iso) {
+  try {
+    const d = new Date(iso);
+    return `${d.getFullYear()} оны ${MONTHS_MN[d.getMonth()]} ${d.getDate()}`;
+  } catch { return ''; }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+document.getElementById('admin-overlay').addEventListener('click', function(e) { if(e.target===this) closeAdmin(); });
 </script>
 </body>
 </html>
