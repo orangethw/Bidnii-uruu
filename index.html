@@ -1,4 +1,420 @@
-ts[slideIndex]?.classList.remove('active');
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Бидний өрөө</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --text-main: #242424;
+    --text-muted: #6b6b6b;
+    --bg-main: #ffffff;
+    --bg-sec: #f9f9f9;
+    --border: #e6e6e6;
+    --accent: #111111;
+    --accent-hover: #444444;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg-main); color: var(--text-main); min-height: 100vh; line-height: 1.6; }
+
+  /* Header & Navigation */
+  header { background: var(--bg-main); padding: 0 2rem; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
+  .header-top { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 0; border-bottom: 1px solid var(--border); }
+  
+  .logo-container { cursor: pointer; display: inline-block; }
+  .logo { font-family: 'Lora', serif; font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); }
+  .logo span { font-style: italic; font-weight: 500; color: var(--text-muted); }
+  .logo-sub { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; font-weight: 500; }
+  
+  .header-date { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.05em; font-weight: 500; }
+  .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+  
+  .btn { padding: 0.5rem 1.2rem; border-radius: 4px; border: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; }
+  .btn-outline { background: transparent; border: 1px solid var(--text-main); color: var(--text-main); }
+  .btn-outline:hover { background: var(--text-main); color: var(--bg-main); }
+  
+  nav { display: flex; gap: 2rem; padding: 1rem 0; overflow-x: auto; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  nav a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; letter-spacing: 0.05em; white-space: nowrap; transition: color 0.2s; cursor: pointer; font-weight: 500; text-transform: uppercase; }
+  nav a:hover, nav a.active { color: var(--accent); font-weight: 600; }
+
+  /* Banner Slider */
+  .banner { position: relative; height: 500px; overflow: hidden; background: var(--bg-sec); }
+  .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; display: flex; align-items: center; justify-content: center; }
+  .slide.active { opacity: 1; z-index: 1; }
+  .slide-img { position: absolute; inset: 0; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 7rem; }
+  .slide-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4); }
+  
+  .slide-content { position: relative; z-index: 2; padding: 2.5rem; max-width: 800px; text-align: center; cursor: pointer; }
+  .slide-tag { display: inline-block; font-size: 0.75rem; letter-spacing: 0.1em; padding: 0.4rem 0.8rem; margin-bottom: 1rem; color: #fff; border: 1px solid rgba(255,255,255,0.5); text-transform: uppercase; border-radius: 2px; }
+  .slide-title { font-family: 'Lora', serif; font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 700; color: #fff; line-height: 1.3; margin-bottom: 1rem; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+  .slide-meta { font-size: 0.85rem; color: rgba(255,255,255,0.8); font-weight: 500; }
+  
+  .banner-nav { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.6rem; z-index: 10; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); border: none; cursor: pointer; transition: all 0.3s; padding: 0; }
+  .dot.active { background: #fff; transform: scale(1.3); }
+  
+  .banner-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: rgba(255,255,255,0.7); width: 50px; height: 50px; cursor: pointer; font-size: 2rem; z-index: 10; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+  .banner-arrow:hover { color: #fff; }
+  .arrow-left { left: 1rem; }
+  .arrow-right { right: 1rem; }
+
+  /* Main Content & Grid */
+  .section-label { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-main); font-weight: 600; padding: 1.5rem 0 0.5rem; max-width: 1200px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+  main { max-width: 1200px; margin: 0 auto; padding: 2.5rem 0; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem 2rem; }
+
+  /* Article Cards */
+  .card { cursor: pointer; group; }
+  .card:hover .card-title { color: var(--text-muted); }
+  .card:hover .card-img { transform: scale(1.03); }
+  
+  .card-img-wrapper { overflow: hidden; border-radius: 4px; margin-bottom: 1.2rem; }
+  .card-img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; transition: transform 0.4s ease; }
+  .card-img-placeholder { width: 100%; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; background: var(--bg-sec); transition: transform 0.4s ease; }
+  
+  .card-tag { font-size: 0.7rem; letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.5rem; }
+  .card-title { font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 700; line-height: 1.4; margin-bottom: 0.6rem; transition: color 0.2s; color: var(--text-main); }
+  .card-excerpt { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-meta { font-size: 0.8rem; color: #999; font-weight: 500; }
+  
+  .card-featured { grid-column: span 2; display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: center; }
+  .card-featured .card-title { font-size: 1.8rem; }
+  .card-featured .card-excerpt { font-size: 1.05rem; -webkit-line-clamp: 4; }
+  .card-featured .card-img-placeholder, .card-featured .card-img { aspect-ratio: 4/3; }
+
+  /* Article View */
+  .article-view { display: none; }
+  .article-view.open { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  
+  .article-header { max-width: 800px; margin: 0 auto 2.5rem; text-align: center; }
+  .article-tag { display: inline-block; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--text-main); text-transform: uppercase; font-weight: 600; margin-bottom: 1rem; }
+  .article-title-h { font-family: 'Lora', serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 700; line-height: 1.2; margin-bottom: 1.5rem; color: var(--text-main); }
+  .article-subtitle { font-family: 'Lora', serif; font-size: 1.25rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 2rem; font-style: italic; }
+  .article-byline { display: flex; align-items: center; justify-content: center; gap: 0.8rem; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+  
+  .article-hero-wrapper { max-width: 1000px; margin: 0 auto 3rem; border-radius: 6px; overflow: hidden; display: flex; justify-content: center; background: var(--bg-sec); }
+  .article-hero { width: 100%; height: auto; display: block; object-fit: contain; }
+  .article-hero-placeholder { width: 100%; height: 400px; display: flex; align-items: center; justify-content: center; font-size: 5rem; background: var(--bg-sec); }
+  
+  .article-body { max-width: 700px; margin: 0 auto; font-family: 'Lora', serif; font-size: 1.15rem; line-height: 1.6; color: var(--text-main); }
+  .article-body p { margin-bottom: 0; }
+
+  /* Reactions */
+  .reactions { display: flex; gap: 1rem; margin: 3rem 0 2rem; flex-wrap: wrap; justify-content: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 1.5rem 0; }
+  .react-btn { display: flex; align-items: center; gap: 0.5rem; background: var(--bg-sec); border: 1px solid var(--border); border-radius: 100px; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 1.1rem; transition: all 0.2s; font-family: 'Inter', sans-serif; color: var(--text-main); }
+  .react-btn:hover { background: var(--border); }
+  .react-btn.reacted { background: var(--text-main); color: var(--bg-main); border-color: var(--text-main); }
+  .react-count { font-size: 0.9rem; font-weight: 600; }
+
+  /* Comments */
+  .comments-section { max-width: 700px; margin: 0 auto; padding-top: 1rem; }
+  .comments-title { font-family: 'Lora', serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
+  .comment-form textarea { width: 100%; min-height: 120px; padding: 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.95rem; resize: vertical; background: var(--bg-main); color: var(--text-main); }
+  .comment-form textarea:focus { outline: none; border-color: var(--text-muted); }
+  .comment-form-row { display: flex; gap: 1rem; margin-top: 1rem; }
+  .comment-form input { flex: 1; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.95rem; background: var(--bg-main); color: var(--text-main); }
+  .comment-form input:focus { outline: none; border-color: var(--text-muted); }
+  .btn-submit { padding: 0.7rem 1.5rem; background: var(--accent); color: var(--bg-main); border: none; border-radius: 4px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 500; transition: background 0.2s; white-space: nowrap; }
+  .btn-submit:hover { background: var(--accent-hover); }
+  
+  .comment { padding: 1.5rem 0; border-bottom: 1px solid var(--border); }
+  .comment-author { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.3rem; }
+  .comment-date { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem; }
+  .comment-text { font-family: 'Lora', serif; font-size: 1.05rem; line-height: 1.7; }
+  
+  .back-btn { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; margin-bottom: 2.5rem; border: none; background: none; font-family: 'Inter', sans-serif; transition: color 0.2s; font-weight: 500; }
+  .back-btn:hover { color: var(--text-main); }
+
+  /* Admin Panel */
+  .admin-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .admin-overlay.open { display: flex; }
+  .admin-panel { background: var(--bg-main); width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; border-radius: 8px; padding: 3rem; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+  .admin-title { font-family: 'Lora', serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 2rem; }
+  .field-label { font-size: 0.85rem; color: var(--text-main); font-weight: 600; margin-bottom: 0.5rem; display: block; }
+  .admin-input, .admin-select { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--text-main); margin-bottom: 1.5rem; background: var(--bg-main); }
+  .admin-input:focus, .admin-select:focus, .admin-textarea:focus { outline: none; border-color: var(--text-muted); }
+  .admin-textarea { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Lora', serif; font-size: 1rem; color: var(--text-main); margin-bottom: 1.5rem; min-height: 200px; resize: vertical; background: var(--bg-main); }
+  .admin-row { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem; }
+  .btn-cancel { padding: 0.7rem 1.2rem; background: transparent; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-family: 'Inter', sans-serif; color: var(--text-muted); font-weight: 500; }
+  .btn-cancel:hover { border-color: var(--text-main); color: var(--text-main); }
+  
+  /* Footer & Extras */
+  footer { background: var(--bg-main); color: var(--text-muted); text-align: center; padding: 4rem 2rem; font-size: 0.9rem; margin-top: 5rem; border-top: 1px solid var(--border); }
+  footer strong { color: var(--text-main); font-weight: 600; }
+  .footer-tagline { font-family: 'Lora', serif; font-size: 1.1rem; color: var(--text-main); margin-top: 0.8rem; font-style: italic; }
+
+  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--text-main); color: var(--bg-main); padding: 0.8rem 1.5rem; border-radius: 100px; font-size: 0.9rem; font-weight: 500; z-index: 999; opacity: 0; transition: opacity 0.3s, bottom 0.3s; pointer-events: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .toast.show { opacity: 1; bottom: 2.5rem; }
+  .empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
+  .empty-state h3 { font-family: 'Lora', serif; font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main); }
+
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+    .card-featured { grid-column: span 1; grid-template-columns: 1fr; }
+    .banner { height: 400px; }
+    .slide-content { padding: 1.5rem; }
+    .header-top { flex-direction: column; gap: 1rem; align-items: center; text-align: center; }
+    .header-date { display: none; }
+    .admin-panel { padding: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo-container" onclick="goHome()">
+      <div class="logo">Бидний <span>өрөө</span></div>
+      <div class="logo-sub">Уран зохиол · Яруу найраг · Философи</div>
+    </div>
+    <div class="header-date" id="header-date"></div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="openAdmin()">✍ Нийтлэх</button>
+    </div>
+  </div>
+  <nav id="main-nav">
+    <a class="active" onclick="filterCat('Бүгд')">Бүгд</a>
+    <a onclick="filterCat('Уран зохиол')">Уран зохиол</a>
+    <a onclick="filterCat('Яруу найраг')">Яруу найраг</a>
+    <a onclick="filterCat('Эссэ')">Эссэ</a>
+    <a onclick="filterCat('Философи')">Философи</a>
+    <a onclick="filterCat('Уран зураг')">Уран зураг</a>
+    <a onclick="filterCat('Орчуулга')">Орчуулга</a>
+    <a onclick="filterCat('Ярилцлага')">Ярилцлага</a>
+    <a onclick="filterCat('Шүүмж/Сэтгэглэл')">Шүүмж/Сэтгэгдэл</a>
+  </nav>
+</header>
+
+<div class="banner" id="banner">
+  <div id="banner-slides"></div>
+  <button class="banner-arrow arrow-left" onclick="changeSlide(-1)">&#8249;</button>
+  <button class="banner-arrow arrow-right" onclick="changeSlide(1)">&#8250;</button>
+  <div class="banner-nav" id="banner-dots"></div>
+</div>
+
+<div class="article-view" id="article-view">
+  <main style="padding-top: 2rem;">
+    <button class="back-btn" onclick="goHome()">&#8592; Буцах</button>
+    <div class="article-header" id="article-content"></div>
+    <div class="article-hero-wrapper" id="article-hero-container"></div>
+    <div class="article-body" id="article-body-text"></div>
+    <div style="max-width:700px;margin:0 auto;">
+      <div class="reactions" id="reactions-bar"></div>
+    </div>
+    <div class="comments-section">
+      <div class="comments-title">Хэлэлцүүлэг</div>
+      <div class="comment-form">
+        <textarea id="comment-text" placeholder="Санал бодлоо хуваалцаарай..."></textarea>
+        <div class="comment-form-row">
+          <input type="text" id="comment-name" placeholder="Таны нэр (заавал биш)">
+          <button class="btn-submit" onclick="submitComment()">Сэтгэгдэл үлдээх</button>
+        </div>
+      </div>
+      <div id="comments-list" style="margin-top:2rem;"></div>
+    </div>
+  </main>
+</div>
+
+<div id="home-view">
+  <div class="section-label" id="section-title">Сүүлийн нийтлэлүүд</div>
+  <main style="padding-top: 2rem;">
+    <div id="posts-grid"></div>
+  </main>
+</div>
+
+<div class="admin-overlay" id="admin-overlay">
+  <div class="admin-panel">
+    <div id="admin-inner"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <p><strong>Бидний өрөө</strong> — Бүх эрх хуулиар хамгаалагдсан &copy; 2026</p>
+  <p class="footer-tagline">"Урлаг бол сэтгэлийн хэл"</p>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, getDocs, addDoc, updateDoc, onSnapshot,
+  query, orderBy, serverTimestamp, deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCz_I7-HpvD2D5zpje8BC9ayobGJG2R3R4",
+  authDomain: "bidnii-uruu.firebaseapp.com",
+  projectId: "bidnii-uruu",
+  storageBucket: "bidnii-uruu.firebasestorage.app",
+  messagingSenderId: "732340022272",
+  appId: "1:732340022272:web:7afa81731759b09c7f3ce5",
+  measurementId: "G-67WK1E0X5W"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// Make db and Firestore functions available globally
+window.db = db;
+window.storage = storage;
+window.fsCollection = collection;
+window.fsDoc = doc;
+window.fsAddDoc = addDoc;
+window.fsUpdateDoc = updateDoc;
+window.fsDeleteDoc = deleteDoc;
+window.fsOnSnapshot = onSnapshot;
+window.fsQuery = query;
+window.fsOrderBy = orderBy;
+window.fsServerTimestamp = serverTimestamp;
+window.fsDocs = getDocs;
+
+window.fsRef = ref;
+window.fsUploadBytes = uploadBytes;
+window.fsGetDownloadURL = getDownloadURL;
+</script>
+
+<script>
+let posts = [];
+let currentPost = null;
+let currentCat = 'Бүгд';
+let slideIndex = 0;
+let slideTimer = null;
+const ADMIN_PASSWORD = 'Bidnii-uruu2006';
+const SUPER_ADMIN_PASSWORD = 'BidniiAdmin@@2006.10.7';
+let adminAuthed = false;
+let isSuperAdmin = false;
+
+const CATEGORIES = ['Уран зохиол','Яруу найраг','Эссэ','Философи','Уран зураг','Орчуулга','Ярилцлага','Шүүмж/Сэтгэгдэл'];
+const EMOJI_PALETTE = ['🎨','📖','✒️','🌸','🖼️','📜','🌿','🪐','🕊️','🌙'];
+const BANNER_COLORS = ['#3a3a3a','#2c2c2c','#4a4a4a','#1f1f1f','#2a2a2a'];
+const MONTHS_MN = ['1-р сарын','2-р сарын','3-р сарын','4-р сарын','5-р сарын','6-р сарын','7-р сарын','8-р сарын','9-р сарын','10-р сарын','11-р сарын','12-р сарын'];
+const DAYS_MN = ['Ням','Даваа','Мягмар','Лхагва','Пүрэв','Баасан','Бямба'];
+
+// Wait for Firebase module to load, then init
+function waitForFirebase(cb, retries = 30) {
+  if (window.db) { cb(); }
+  else if (retries > 0) { setTimeout(() => waitForFirebase(cb, retries - 1), 100); }
+  else { console.error('Firebase failed to load'); }
+}
+
+window.onload = () => {
+  const now = new Date();
+  document.getElementById('header-date').textContent = `${now.getFullYear()} оны ${MONTHS_MN[now.getMonth()]} ${now.getDate()}, ${DAYS_MN[now.getDay()]} гариг`;
+  showToast('Өгөгдөл ачааллаж байна...');
+
+  waitForFirebase(() => {
+    const q = window.fsQuery(window.fsCollection(window.db, 'posts'), window.fsOrderBy('date', 'desc'));
+    window.fsOnSnapshot(q, (snapshot) => {
+      posts = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+      if (posts.length === 0) {
+        seedPosts();
+      } else {
+        renderAll();
+        if (currentPost) {
+           const updatedPost = posts.find(p => p.firestoreId === currentPost.firestoreId);
+           if (updatedPost) {
+              currentPost = updatedPost;
+              renderArticle();
+           }
+        }
+      }
+    });
+  });
+};
+
+async function seedPosts() {
+  const samples = [
+    {
+      title: 'Монгол шүлгийн уламжлал ба орчин үе',
+      categories: ['Яруу найраг'],
+      category: 'Яруу найраг',
+      excerpt: 'Монгол шүлгийн урт удаан түүх, нүүдлийн соёл иргэншлийн гүн гүнзгий уламжлал орчин үеийн залуу яруу найрагчдад хэрхэн амьд үргэлжилж байна вэ?',
+      body: 'Монгол шүлгийн үндэс нь нүүдлийн тал нутагт оршдог.\nМорины туурайн дуу, салхины исгэрээ,\nгэрийн дулаан — эдгээр нь монгол яруу найрагчдын сэтгэлийн хамгийн гүн давхаргад хэвтэж буй дүрс юм.\n\nОрчин үеийн залуу яруу найрагчид уламжлалт хэлбэрийг шинэ утга санааны хэрэгслэл болгон ашиглаж байна.\nТоогоор бичсэн шүлэг, чөлөөт хэмжүүр,\nорчин цагийн хот суурин амьдралын дүрслэл —\nбүгд хуучин суурин дээр шинэ байшин барьж байгаа мэт.\n\n"Шүлэг бол цагийн хөшиг" гэж нэрт яруу найрагч хэлсэн байдаг.\nТэрхүү хөшиг өнөөдөр ч хөдөлж, шинэ агаар орж байна.',
+      emoji: '✒️', color: '#3a3a3a', reactions: {like:24,love:18,wow:6}, comments: []
+    },
+    {
+      title: 'Достоевскийн "Ах дүү Карамазов" — хүний сүнсний нэвтэрхий толь',
+      categories: ['Уран зохиол'],
+      category: 'Уран зохиол',
+      excerpt: 'Орос уран зохиолын алтан санд багтах энэхүү бүтээл нь нүгэл, уучлал, итгэл үнэмшлийн асуудлыг хэрхэн гэрэлтүүлж байна вэ?',
+      body: 'Достоевскийн сүүлчийн бөгөөд хамгийн төлөвшсөн роман "Ах дүү Карамазов" нь зөвхөн нэг гэр бүлийн түүх биш — энэ бол хүн төрөлхтний оюун санааны хямралын дүрслэл юм.\n\nДмитрий, Иван, Алёша — гурван ах дүү нь хүний мөн чанарын гурван өөр хэлбэрийг төлөөлнө. Мах бялуу хүсэл эрмэлзэл, оюуны эргэлзэл, сүнслэг итгэл — эдгээр нь манай өдөр тутмын амьдралд ч байдаг тэмцэл юм.\n\nУншихад хэцүү мэт санагдавч, нэг удаа эхэлбэл Достоевский таныг суллахгүй. Учир нь тэр таны дотоод ертөнцийн тухай ярьж байдаг.',
+      emoji: '📖', color: '#2c2c2c', reactions: {like:31,love:22,wow:9}, comments: [{name:'Ундрах',text:'Энэ номыг гурав дахин уншсан. Удаа бүр өөр зүйл олж хардаг.',date:'1 цагийн өмнө'}]
+    },
+    {
+      title: 'Уран зургийн хэл: дүрс ба санааны хооронд',
+      categories: ['Уран зураг'],
+      category: 'Уран зураг',
+      excerpt: 'Уран зураг үг хэрэглэдэггүй боловч хэлдэг. Монгол уран зурагчдын бүтээлд байгаль, хүн, сансар хэрхэн нэгддэг вэ.',
+      body: 'Уран зураг бол харагдахуйц хэлбэрт оруулсан мэдрэмж юм. Уран зурагч өнгө сойз барихдаа зөвхөн дүрс бус сэтгэл хөдлөлөө дамжуулдаг.\n\nМонгол уран зурагчдын бүтээлд тал нутгийн өргөн уудам, тэнгэрийн өнгө, нүүдэлчний чөлөөт сүнс давтагдан гарч ирдэг. Энийг санамсаргүй биш — энэ бол манай ард түмний хамгийн гүн үнэт зүйл.\n\nОрчин үеийн залуу уран зурагчид уламжлалт загварыг абстракт хэлбэртэй хослуулж, шинэ дүрслэлийн хэл бүтээж байна.',
+      emoji: '🎨', color: '#1f1f1f', reactions: {like:15,love:27,wow:4}, comments: []
+    },
+  ];
+  for (let i = 0; i < samples.length; i++) {
+    const s = samples[i];
+    await window.fsAddDoc(window.fsCollection(window.db, 'posts'), {
+      id: Date.now() + i,
+      date: new Date(Date.now() - i * 86400000 * 2).toISOString(),
+      imageUrl: '',
+      ...s
+    });
+  }
+}
+
+async function savePostToFirestore(post) {
+  if (!post.firestoreId) return;
+  const { firestoreId, ...data } = post;
+  await window.fsUpdateDoc(window.fsDoc(window.db, 'posts', firestoreId), data);
+}
+
+function renderAll() { renderBanner(); renderGrid(); }
+
+function goHome() {
+  currentCat = 'Бүгд';
+  updateNavState();
+  closeArticle();
+  renderGrid();
+  document.getElementById('section-title').textContent = 'Сүүлийн нийтлэлүүд';
+}
+
+function renderBanner() {
+  const slidesEl = document.getElementById('banner-slides');
+  const dotsEl = document.getElementById('banner-dots');
+  const featured = posts.slice(0,5);
+  if (!featured.length) {
+    slidesEl.innerHTML = '<div class="slide active"><div class="slide-overlay"></div><div class="slide-content"><div class="slide-title">Бидний өрөөнд тавтай морил</div></div></div>';
+    return;
+  }
+  slidesEl.innerHTML = featured.map((p,i) => `
+    <div class="slide ${i===0?'active':''}" id="slide-${i}">
+      <div class="slide-img" style="background-color:${p.color||'#2c2c2c'};${p.imageUrl?`background-image:url('${p.imageUrl}')`:''}">${p.imageUrl?'':p.emoji||'📖'}</div>
+      <div class="slide-overlay"></div>
+      <div class="slide-content" onclick="openArticle(${p.id})">
+        <div class="slide-tag">${p.categories ? p.categories[0] : p.category}</div>
+        <div class="slide-title">${p.title}</div>
+        <div class="slide-meta">${formatDate(p.date)}</div>
+      </div>
+    </div>`).join('');
+  dotsEl.innerHTML = featured.map((_,i) => `<button class="dot ${i===0?'active':''}" onclick="goSlide(${i})"></button>`).join('');
+  clearInterval(slideTimer);
+  slideTimer = setInterval(() => changeSlide(1), 6000);
+}
+
+function changeSlide(dir) {
+  const count = Math.min(posts.length, 5);
+  if (!count) return;
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.querySelectorAll('.dot');
+  slides[slideIndex]?.classList.remove('active');
+  dots[slideIndex]?.classList.remove('active');
   slideIndex = (slideIndex + dir + count) % count;
   slides[slideIndex]?.classList.add('active');
   dots[slideIndex]?.classList.add('active');
@@ -259,9 +675,8 @@ function renderPostForm(editingPost = null) {
     <label class="field-label">Нийтлэлийн агуулга </label>
     <textarea class="admin-textarea" id="f-body" placeholder="Нийтлэлийнхээ бүтэн агуулгыг энд бичнэ үү. Шүлэг бичихдээ мөр шилжүүлэхийн тулд Enter дарна уу...">${editingPost ? editingPost.body : ''}</textarea>
     
-    <label class="field-label">Зураг оруулах </label>
-    <input type="file" class="admin-input" id="f-img-file" accept="image/*" style="padding:0.6rem;">
-    <input type="hidden" id="f-img" value="${editingPost ? (editingPost.imageUrl || '') : ''}">
+    <label class="field-label">Зураг оруулах (URL холбоос) </label>
+    <input type="text" class="admin-input" id="f-img" placeholder="https://..." value="${editingPost ? (editingPost.imageUrl || '') : ''}">
     
     <label class="field-label">Нүүр дүрс — зураг байхгүй бол доороос сонгоно уу</label>
     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
@@ -286,23 +701,7 @@ async function publishPost(editFirestoreId = '') {
   if (selectedCats.length === 0) { showToast('Ядаж нэг ангилал сонгоно уу!'); return; }
 
   showToast(editFirestoreId ? 'Хадгалж байна...' : 'Нийтлэж байна...');
-  const fileInput = document.getElementById('f-img-file');
   let finalImgUrl = document.getElementById('f-img').value.trim();
-
-  // If a file is selected, upload to Firebase Storage
-  if (fileInput.files.length > 0) {
-    try {
-      showToast('Зураг хуулж байна...');
-      const file = fileInput.files[0];
-      const storageRef = window.fsRef(window.storage, 'images/' + Date.now() + '_' + file.name);
-      await window.fsUploadBytes(storageRef, file);
-      finalImgUrl = await window.fsGetDownloadURL(storageRef);
-    } catch (err) {
-      console.error(err);
-      showToast('Зураг хуулахад алдаа гарлаа!');
-      return;
-    }
-  }
 
   const postData = {
     title, 
