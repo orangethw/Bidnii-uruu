@@ -662,17 +662,17 @@ function renderPostForm(editingPost = null) {
       <div class="admin-title" style="margin:0">${editingPost ? 'Нийтлэл засах' : 'Шинэ нийтлэл'}</div>
       <button style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);" onclick="closeAdmin()">&#x2715;</button>
     </div>
-    <label class="field-label">Гарчиг *</label>
+    <label class="field-label">Гарчиг </label>
     <input class="admin-input" id="f-title" placeholder="Нийтлэлийн гарчиг..." value="${editingPost ? editingPost.title.replace(/"/g, '&quot;') : ''}">
-    <label class="field-label">Товч агуулга *</label>
+    <label class="field-label">Товч агуулга </label>
     <input class="admin-input" id="f-excerpt" placeholder="Нэг, хоёр өгүүлбэрээр тайлбарлана уу..." value="${editingPost ? editingPost.excerpt.replace(/"/g, '&quot;') : ''}">
     
-    <label class="field-label">Ангилал *</label>
+    <label class="field-label">Ангилал </label>
     <div style="display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem; padding:0.5rem; border:1px solid var(--border); border-radius:4px; background:var(--bg-main);">
       ${catsHtml}
     </div>
 
-    <label class="field-label">Нийтлэлийн агуулга *</label>
+    <label class="field-label">Нийтлэлийн агуулга </label>
     <textarea class="admin-textarea" id="f-body" placeholder="Нийтлэлийнхээ бүтэн агуулгыг энд бичнэ үү. Шүлэг бичихдээ мөр шилжүүлэхийн тулд Enter дарна уу...">${editingPost ? editingPost.body : ''}</textarea>
     
     <label class="field-label">Зураг оруулах (Төхөөрөмжөөс сонгох)</label>
