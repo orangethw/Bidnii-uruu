@@ -699,20 +699,21 @@ async function publishPost(editFirestoreId = '') {
   const selectedCats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
 
   if (!title || !excerpt || !body) { showToast('Гарчиг, товч агуулга, бие агуулгыг бөглөнө үү!'); return; }
-  if (selectedCats.length === 0) { showToast('Ядаж нэг ангилал сонгоно уу!'); return; }
+  if (selectedCats.length === 0) { showToast('Багадаа нэг ангилал сонгоно уу!'); return; }
 
   showToast(editFirestoreId ? 'Хадгалж байна...' : 'Нийтлэж байна...');
   const fileInput = document.getElementById('f-img-file');
   let finalImgUrl = document.getElementById('f-img').value.trim();
 
   // If a file is selected, upload to Firebase Storage
-  if (fileInput.files.length > 0) {
+  if (fileInput.files && fileInput.files.length > 0) {
     try {
       showToast('Зураг хуулж байна...');
       const file = fileInput.files[0];
+      // Засвар: storageRef-ийг зөв үүсгэх
       const storageRef = window.fsRef(window.storage, 'images/' + Date.now() + '_' + file.name);
-      await window.fsUploadBytes(storageRef, file);
-      finalImgUrl = await window.fsGetDownloadURL(storageRef);
+      const uploadResult = await window.fsUploadBytes(storageRef, file);
+      finalImgUrl = await window.fsGetDownloadURL(uploadResult.ref);
     } catch (err) {
       console.error(err);
       showToast('Зураг хуулахад алдаа гарлаа!');
@@ -725,12 +726,13 @@ async function publishPost(editFirestoreId = '') {
     excerpt, 
     body,
     categories: selectedCats,
-    category: selectedCats[0], // fallback for old schema
+    category: selectedCats[0], 
     imageUrl: finalImgUrl,
     emoji: chosenEmoji
   };
 
   if (editFirestoreId) {
+    // Засвар: Update хийх үед firestoreId-г зөв дамжуулах
     await window.fsUpdateDoc(window.fsDoc(window.db, 'posts', editFirestoreId), postData);
     showToast('Амжилттай шинэчлэгдлээ! ✓');
   } else {
@@ -743,6 +745,7 @@ async function publishPost(editFirestoreId = '') {
     showToast('Нийтлэл амжилттай нийтлэгдлээ! ✓');
   }
   closeAdmin();
+}
 }
 
 function closeAdmin() { document.getElementById('admin-overlay').classList.remove('open'); }
