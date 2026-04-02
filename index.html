@@ -675,7 +675,7 @@ function renderPostForm(editingPost = null) {
     <label class="field-label">Нийтлэлийн агуулга </label>
     <textarea class="admin-textarea" id="f-body" placeholder="Нийтлэлийнхээ бүтэн агуулгыг энд бичнэ үү. Шүлэг бичихдээ мөр шилжүүлэхийн тулд Enter дарна уу...">${editingPost ? editingPost.body : ''}</textarea>
     
-    <label class="field-label">Зураг оруулах (Төхөөрөмжөөс сонгох)</label>
+    <label class="field-label">Зураг оруулах </label>
     <input type="file" class="admin-input" id="f-img-file" accept="image/*" style="padding:0.6rem;">
     <input type="hidden" id="f-img" value="${editingPost ? (editingPost.imageUrl || '') : ''}">
     
