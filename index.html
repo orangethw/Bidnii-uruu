@@ -96,8 +96,8 @@
   .article-subtitle { font-family: 'Lora', serif; font-size: 1.25rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 2rem; font-style: italic; }
   .article-byline { display: flex; align-items: center; justify-content: center; gap: 0.8rem; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
   
-  .article-hero-wrapper { max-width: 1000px; margin: 0 auto 3rem; border-radius: 6px; overflow: hidden; }
-  .article-hero { width: 100%; max-height: 550px; object-fit: cover; display: block; }
+  .article-hero-wrapper { max-width: 1000px; margin: 0 auto 3rem; border-radius: 6px; overflow: hidden; display: flex; justify-content: center; background: var(--bg-sec); }
+  .article-hero { width: 100%; height: auto; display: block; object-fit: contain; }
   .article-hero-placeholder { width: 100%; height: 400px; display: flex; align-items: center; justify-content: center; font-size: 5rem; background: var(--bg-sec); }
   
   .article-body { max-width: 700px; margin: 0 auto; font-family: 'Lora', serif; font-size: 1.15rem; line-height: 1.6; color: var(--text-main); }
@@ -239,13 +239,15 @@
   <p class="footer-tagline">"Урлаг бол сэтгэлийн хэл"</p>
 </footer>
 
-<!-- Firebase SDKs -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getFirestore, collection, doc, getDocs, addDoc, updateDoc, onSnapshot,
-  query, orderBy, serverTimestamp
+  query, orderBy, serverTimestamp, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCz_I7-HpvD2D5zpje8BC9ayobGJG2R3R4",
@@ -259,18 +261,25 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // Make db and Firestore functions available globally
 window.db = db;
+window.storage = storage;
 window.fsCollection = collection;
 window.fsDoc = doc;
 window.fsAddDoc = addDoc;
 window.fsUpdateDoc = updateDoc;
+window.fsDeleteDoc = deleteDoc;
 window.fsOnSnapshot = onSnapshot;
 window.fsQuery = query;
 window.fsOrderBy = orderBy;
 window.fsServerTimestamp = serverTimestamp;
 window.fsDocs = getDocs;
+
+window.fsRef = ref;
+window.fsUploadBytes = uploadBytes;
+window.fsGetDownloadURL = getDownloadURL;
 </script>
 
 <script>
@@ -280,6 +289,11 @@ let currentCat = 'Бүгд';
 let slideIndex = 0;
 let slideTimer = null;
 const ADMIN_PASSWORD = 'Bidnii-uruu2006';
+const SUPER_ADMIN_PASSWORD = 'BidniiAdmin@@2006.10.7';
+let adminAuthed = false;
+let isSuperAdmin = false;
+
+const CATEGORIES = ['Уран зохиол','Яруу найраг','Эссэ','Философи','Уран зураг','Орчуулга','Ярилцлага','Шүүмж/Сэтгэгдэл'];
 const EMOJI_PALETTE = ['🎨','📖','✒️','🌸','🖼️','📜','🌿','🪐','🕊️','🌙'];
 const BANNER_COLORS = ['#3a3a3a','#2c2c2c','#4a4a4a','#1f1f1f','#2a2a2a'];
 const MONTHS_MN = ['1-р сарын','2-р сарын','3-р сарын','4-р сарын','5-р сарын','6-р сарын','7-р сарын','8-р сарын','9-р сарын','10-р сарын','11-р сарын','12-р сарын'];
@@ -298,7 +312,6 @@ window.onload = () => {
   showToast('Өгөгдөл ачааллаж байна...');
 
   waitForFirebase(() => {
-    // Real-time listener — auto-updates the page for all users
     const q = window.fsQuery(window.fsCollection(window.db, 'posts'), window.fsOrderBy('date', 'desc'));
     window.fsOnSnapshot(q, (snapshot) => {
       posts = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
@@ -306,6 +319,13 @@ window.onload = () => {
         seedPosts();
       } else {
         renderAll();
+        if (currentPost) {
+           const updatedPost = posts.find(p => p.firestoreId === currentPost.firestoreId);
+           if (updatedPost) {
+              currentPost = updatedPost;
+              renderArticle();
+           }
+        }
       }
     });
   });
@@ -315,6 +335,7 @@ async function seedPosts() {
   const samples = [
     {
       title: 'Монгол шүлгийн уламжлал ба орчин үе',
+      categories: ['Яруу найраг'],
       category: 'Яруу найраг',
       excerpt: 'Монгол шүлгийн урт удаан түүх, нүүдлийн соёл иргэншлийн гүн гүнзгий уламжлал орчин үеийн залуу яруу найрагчдад хэрхэн амьд үргэлжилж байна вэ?',
       body: 'Монгол шүлгийн үндэс нь нүүдлийн тал нутагт оршдог.\nМорины туурайн дуу, салхины исгэрээ,\nгэрийн дулаан — эдгээр нь монгол яруу найрагчдын сэтгэлийн хамгийн гүн давхаргад хэвтэж буй дүрс юм.\n\nОрчин үеийн залуу яруу найрагчид уламжлалт хэлбэрийг шинэ утга санааны хэрэгслэл болгон ашиглаж байна.\nТоогоор бичсэн шүлэг, чөлөөт хэмжүүр,\nорчин цагийн хот суурин амьдралын дүрслэл —\nбүгд хуучин суурин дээр шинэ байшин барьж байгаа мэт.\n\n"Шүлэг бол цагийн хөшиг" гэж нэрт яруу найрагч хэлсэн байдаг.\nТэрхүү хөшиг өнөөдөр ч хөдөлж, шинэ агаар орж байна.',
@@ -322,6 +343,7 @@ async function seedPosts() {
     },
     {
       title: 'Достоевскийн "Ах дүү Карамазов" — хүний сүнсний нэвтэрхий толь',
+      categories: ['Уран зохиол'],
       category: 'Уран зохиол',
       excerpt: 'Орос уран зохиолын алтан санд багтах энэхүү бүтээл нь нүгэл, уучлал, итгэл үнэмшлийн асуудлыг хэрхэн гэрэлтүүлж байна вэ?',
       body: 'Достоевскийн сүүлчийн бөгөөд хамгийн төлөвшсөн роман "Ах дүү Карамазов" нь зөвхөн нэг гэр бүлийн түүх биш — энэ бол хүн төрөлхтний оюун санааны хямралын дүрслэл юм.\n\nДмитрий, Иван, Алёша — гурван ах дүү нь хүний мөн чанарын гурван өөр хэлбэрийг төлөөлнө. Мах бялуу хүсэл эрмэлзэл, оюуны эргэлзэл, сүнслэг итгэл — эдгээр нь манай өдөр тутмын амьдралд ч байдаг тэмцэл юм.\n\nУншихад хэцүү мэт санагдавч, нэг удаа эхэлбэл Достоевский таныг суллахгүй. Учир нь тэр таны дотоод ертөнцийн тухай ярьж байдаг.',
@@ -329,6 +351,7 @@ async function seedPosts() {
     },
     {
       title: 'Уран зургийн хэл: дүрс ба санааны хооронд',
+      categories: ['Уран зураг'],
       category: 'Уран зураг',
       excerpt: 'Уран зураг үг хэрэглэдэггүй боловч хэлдэг. Монгол уран зурагчдын бүтээлд байгаль, хүн, сансар хэрхэн нэгддэг вэ.',
       body: 'Уран зураг бол харагдахуйц хэлбэрт оруулсан мэдрэмж юм. Уран зурагч өнгө сойз барихдаа зөвхөн дүрс бус сэтгэл хөдлөлөө дамжуулдаг.\n\nМонгол уран зурагчдын бүтээлд тал нутгийн өргөн уудам, тэнгэрийн өнгө, нүүдэлчний чөлөөт сүнс давтагдан гарч ирдэг. Энийг санамсаргүй биш — энэ бол манай ард түмний хамгийн гүн үнэт зүйл.\n\nОрчин үеийн залуу уран зурагчид уламжлалт загварыг абстракт хэлбэртэй хослуулж, шинэ дүрслэлийн хэл бүтээж байна.',
@@ -346,7 +369,6 @@ async function seedPosts() {
   }
 }
 
-// Save a single post field update to Firestore
 async function savePostToFirestore(post) {
   if (!post.firestoreId) return;
   const { firestoreId, ...data } = post;
@@ -376,7 +398,7 @@ function renderBanner() {
       <div class="slide-img" style="background-color:${p.color||'#2c2c2c'};${p.imageUrl?`background-image:url('${p.imageUrl}')`:''}">${p.imageUrl?'':p.emoji||'📖'}</div>
       <div class="slide-overlay"></div>
       <div class="slide-content" onclick="openArticle(${p.id})">
-        <div class="slide-tag">${p.category}</div>
+        <div class="slide-tag">${p.categories ? p.categories[0] : p.category}</div>
         <div class="slide-title">${p.title}</div>
         <div class="slide-meta">${formatDate(p.date)}</div>
       </div>
@@ -417,12 +439,19 @@ function filterCat(cat) {
 
 function renderGrid() {
   const el = document.getElementById('posts-grid');
-  const filtered = currentCat === 'Бүгд' ? posts : posts.filter(p => p.category === currentCat);
+  const filtered = currentCat === 'Бүгд' ? posts : posts.filter(p => {
+    if (p.categories) return p.categories.includes(currentCat);
+    return p.category === currentCat;
+  });
   if (!filtered.length) {
     el.innerHTML = '<div class="empty-state"><h3>Нийтлэл байхгүй байна</h3><p>Энэ ангиллын эхний нийтлэлийг та бичээрэй!</p></div>';
     return;
   }
   el.innerHTML = `<div class="grid">${filtered.map((p,i) => i===0 && currentCat === 'Бүгд' ? featuredCard(p) : smallCard(p)).join('')}</div>`;
+}
+
+function getDisplayTags(p) {
+  return p.categories && p.categories.length > 0 ? p.categories.join(', ') : p.category;
 }
 
 function featuredCard(p) {
@@ -431,7 +460,7 @@ function featuredCard(p) {
       <div class="card-img-placeholder" style="background:${p.color||'#f4f4f4'}; color:${p.imageUrl?'inherit':'#fff'}">${p.imageUrl?`<img src="${p.imageUrl}" class="card-img">`:p.emoji||'📖'}</div>
     </div>
     <div class="card-body">
-      <div class="card-tag">${p.category}</div>
+      <div class="card-tag">${getDisplayTags(p)}</div>
       <div class="card-title">${p.title}</div>
       <div class="card-excerpt">${p.excerpt}</div>
       <div class="card-meta">${formatDate(p.date)}</div>
@@ -445,7 +474,7 @@ function smallCard(p) {
       <div class="card-img-placeholder" style="background:${p.color||'#f4f4f4'}; color:${p.imageUrl?'inherit':'#fff'}">${p.imageUrl?`<img src="${p.imageUrl}" class="card-img">`:p.emoji||'📖'}</div>
     </div>
     <div class="card-body">
-      <div class="card-tag">${p.category}</div>
+      <div class="card-tag">${getDisplayTags(p)}</div>
       <div class="card-title">${p.title}</div>
       <div class="card-excerpt">${p.excerpt}</div>
       <div class="card-meta">${formatDate(p.date)}</div>
@@ -471,9 +500,21 @@ function closeArticle() {
 }
 
 function renderArticle() {
+  if (!currentPost) return;
   const p = currentPost;
+  
+  let adminControls = '';
+  if (isSuperAdmin) {
+    adminControls = `
+      <div style="text-align:right; margin-bottom:1.5rem; display:flex; justify-content:flex-end; gap:0.5rem;">
+        <button class="btn btn-outline" onclick="editPost('${p.firestoreId}')" style="padding:0.4rem 1rem;">Засах</button>
+        <button class="btn btn-outline" onclick="deletePost('${p.firestoreId}')" style="color:red; border-color:red; padding:0.4rem 1rem;">Устгах</button>
+      </div>`;
+  }
+
   document.getElementById('article-content').innerHTML = `
-    <div class="article-tag">${p.category}</div>
+    ${adminControls}
+    <div class="article-tag">${getDisplayTags(p)}</div>
     <h1 class="article-title-h">${p.title}</h1>
     <p class="article-subtitle">${p.excerpt}</p>
     <div class="article-byline">
@@ -487,6 +528,20 @@ function renderArticle() {
   document.getElementById('article-body-text').innerHTML = (p.body||'').replace(/\n/g, '<br>');
   renderReactions();
   renderComments();
+}
+
+async function deletePost(firestoreId) {
+  if (!confirm('Энэ нийтлэлийг устгах уу? Устгасан тохиолдолд сэргээх боломжгүй.')) return;
+  await window.fsDeleteDoc(window.fsDoc(window.db, 'posts', firestoreId));
+  showToast('Нийтлэл устгагдлаа!');
+  goHome();
+}
+
+function editPost(firestoreId) {
+  const post = posts.find(p => p.firestoreId === firestoreId);
+  if (!post) return;
+  document.getElementById('admin-overlay').classList.add('open');
+  renderPostForm(post);
 }
 
 function renderReactions() {
@@ -514,12 +569,23 @@ function renderComments() {
   const list = document.getElementById('comments-list');
   const comments = currentPost.comments || [];
   list.innerHTML = comments.length
-    ? comments.map(c => `<div class="comment">
-        <div class="comment-author">${c.name||'Нэргүй уншигч'}</div>
+    ? comments.map((c, i) => `<div class="comment">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.3rem;">
+          <div class="comment-author">${c.name||'Нэргүй уншигч'}</div>
+          ${isSuperAdmin ? `<button onclick="deleteComment(${i})" style="color:red; background:none; border:none; cursor:pointer; font-size:0.85rem; font-family:'Inter',sans-serif;">Устгах</button>` : ''}
+        </div>
         <div class="comment-date">${c.date}</div>
         <div class="comment-text">${c.text}</div>
       </div>`).join('')
     : '<p style="color:var(--text-muted);font-size:0.95rem;text-align:center;padding:2rem 0;">Сэтгэгдэл байхгүй байна. Эхний сэтгэгдлийг та үлдээгээрэй!</p>';
+}
+
+async function deleteComment(idx) {
+  if (!confirm('Энэ сэтгэгдлийг устгах уу?')) return;
+  currentPost.comments.splice(idx, 1);
+  await savePostToFirestore(currentPost);
+  renderComments();
+  showToast('Сэтгэгдэл устгагдлаа!');
 }
 
 async function submitComment() {
@@ -535,8 +601,6 @@ async function submitComment() {
   showToast('Сэтгэгдэл нийтлэгдлээ!');
 }
 
-let adminAuthed = false;
-
 function openAdmin() {
   document.getElementById('admin-overlay').classList.add('open');
   if (!adminAuthed) renderLoginForm();
@@ -547,7 +611,7 @@ function renderLoginForm() {
   document.getElementById('admin-inner').innerHTML = `
     <div style="text-align:center;">
       <h2 class="admin-title" style="margin-bottom:0.5rem;">Редакторын нэвтрэлт</h2>
-      <p style="color:var(--text-muted);margin-bottom:2rem;font-size:0.95rem;">Нийтлэл оруулахын тулд нууц үгээ оруулна уу</p>
+      <p style="color:var(--text-muted);margin-bottom:2rem;font-size:0.95rem;">Нийтлэл оруулах эсвэл удирдахын тулд нууц үгээ оруулна уу</p>
       <input class="admin-input" type="text" id="pw-input" placeholder="Нууц үг" onkeydown="if(event.key==='Enter')checkPw()" style="text-align:center;max-width:300px;margin:0 auto 1rem;">
       <div style="font-size:0.85rem;color:var(--text-muted);">Нууц үг: <strong>Bidnii-uruu2006</strong></div>
       <div class="admin-row" style="margin-top:2rem;justify-content:center;">
@@ -560,7 +624,12 @@ function renderLoginForm() {
 
 function checkPw() {
   const pw = document.getElementById('pw-input')?.value;
-  if (pw === ADMIN_PASSWORD) { adminAuthed = true; renderPostForm(); }
+  if (pw === ADMIN_PASSWORD || pw === SUPER_ADMIN_PASSWORD) { 
+    adminAuthed = true; 
+    isSuperAdmin = (pw === SUPER_ADMIN_PASSWORD);
+    renderPostForm(); 
+    if (currentPost) renderArticle();
+  }
   else showToast('Нууц үг буруу байна!');
 }
 
@@ -578,62 +647,102 @@ function pickEmoji(e) {
   if (label) label.textContent = e;
 }
 
-function renderPostForm() {
+function renderPostForm(editingPost = null) {
+  if (editingPost && editingPost.emoji) chosenEmoji = editingPost.emoji;
+
+  const catsHtml = CATEGORIES.map(c => {
+    const isChecked = editingPost ? (editingPost.categories?.includes(c) || editingPost.category === c ? 'checked' : '') : '';
+    return `<label style="display:flex; align-items:center; gap:0.4rem; font-size:0.95rem; cursor:pointer;">
+      <input type="checkbox" class="cat-checkbox" value="${c}" ${isChecked} style="width:auto; margin:0;"> ${c}
+    </label>`;
+  }).join('');
+
   document.getElementById('admin-inner').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
-      <div class="admin-title" style="margin:0">Шинэ нийтлэл</div>
+      <div class="admin-title" style="margin:0">${editingPost ? 'Нийтлэл засах' : 'Шинэ нийтлэл'}</div>
       <button style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);" onclick="closeAdmin()">&#x2715;</button>
     </div>
     <label class="field-label">Гарчиг *</label>
-    <input class="admin-input" id="f-title" placeholder="Нийтлэлийн гарчиг...">
+    <input class="admin-input" id="f-title" placeholder="Нийтлэлийн гарчиг..." value="${editingPost ? editingPost.title.replace(/"/g, '&quot;') : ''}">
     <label class="field-label">Товч агуулга *</label>
-    <input class="admin-input" id="f-excerpt" placeholder="Нэг, хоёр өгүүлбэрээр тайлбарлана уу...">
-    <label class="field-label">Ангилал</label>
-    <select class="admin-select" id="f-cat">
-      <option>Уран зохиол</option>
-      <option>Яруу найраг</option>
-      <option>Эссэ</option>
-      <option>Философи</option>
-      <option>Уран зураг</option>
-      <option>Орчуулга</option>
-      <option>Ярилцлага</option>
-      <option>Шүүмж/Сэтгэгдэл</option>
-    </select>
+    <input class="admin-input" id="f-excerpt" placeholder="Нэг, хоёр өгүүлбэрээр тайлбарлана уу..." value="${editingPost ? editingPost.excerpt.replace(/"/g, '&quot;') : ''}">
+    
+    <label class="field-label">Ангилал *</label>
+    <div style="display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem; padding:0.5rem; border:1px solid var(--border); border-radius:4px; background:var(--bg-main);">
+      ${catsHtml}
+    </div>
+
     <label class="field-label">Нийтлэлийн агуулга *</label>
-    <textarea class="admin-textarea" id="f-body" placeholder="Нийтлэлийнхээ бүтэн агуулгыг энд бичнэ үү. Шүлэг бичихдээ мөр шилжүүлэхийн тулд Enter дарна уу..."></textarea>
-    <label class="field-label">Зургийн холбоос (заавал биш)</label>
-    <input class="admin-input" id="f-img" placeholder="https://example.com/zurг.jpg">
+    <textarea class="admin-textarea" id="f-body" placeholder="Нийтлэлийнхээ бүтэн агуулгыг энд бичнэ үү. Шүлэг бичихдээ мөр шилжүүлэхийн тулд Enter дарна уу...">${editingPost ? editingPost.body : ''}</textarea>
+    
+    <label class="field-label">Зураг оруулах (Төхөөрөмжөөс сонгох)</label>
+    <input type="file" class="admin-input" id="f-img-file" accept="image/*" style="padding:0.6rem;">
+    <input type="hidden" id="f-img" value="${editingPost ? (editingPost.imageUrl || '') : ''}">
+    
     <label class="field-label">Нүүр дүрс — зураг байхгүй бол доороос сонгоно уу</label>
     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
       ${EMOJI_PALETTE.map(e => `<button type="button" onclick="pickEmoji('${e}')" style="font-size:1.6rem;background:${e===chosenEmoji?'var(--text-main)':'var(--bg-sec)'};border:2px solid ${e===chosenEmoji?'var(--text-main)':'var(--border)'};border-radius:6px;width:50px;height:50px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" id="ep-${e}" title="${e}">${e}</button>`).join('')}
     </div>
     <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:2rem;">Сонгосон: <span id="chosen-emoji-label" style="font-size:1.2rem;">${chosenEmoji}</span></div>
+    
     <div class="admin-row">
       <button class="btn-cancel" onclick="closeAdmin()">Болих</button>
-      <button class="btn-submit" onclick="publishPost()">✍ Нийтлэх</button>
+      <button class="btn-submit" onclick="publishPost('${editingPost ? editingPost.firestoreId : ''}')">✍ ${editingPost ? 'Хадгалах' : 'Нийтлэх'}</button>
     </div>`;
 }
 
-async function publishPost() {
+async function publishPost(editFirestoreId = '') {
   const title = document.getElementById('f-title').value.trim();
   const excerpt = document.getElementById('f-excerpt').value.trim();
   const body = document.getElementById('f-body').value.trim();
-  if (!title||!excerpt||!body) { showToast('Гарчиг, товч агуулга, бие агуулгыг бөглөнө үү!'); return; }
-  const newPost = {
-    id: Date.now(),
-    date: new Date().toISOString(),
-    title, excerpt, body,
-    category: document.getElementById('f-cat').value,
-    imageUrl: document.getElementById('f-img').value.trim(),
-    emoji: chosenEmoji,
-    color: BANNER_COLORS[Math.floor(Math.random()*BANNER_COLORS.length)],
-    reactions: {like:0,love:0,wow:0},
-    comments: []
+  
+  const selectedCats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
+
+  if (!title || !excerpt || !body) { showToast('Гарчиг, товч агуулга, бие агуулгыг бөглөнө үү!'); return; }
+  if (selectedCats.length === 0) { showToast('Ядаж нэг ангилал сонгоно уу!'); return; }
+
+  showToast(editFirestoreId ? 'Хадгалж байна...' : 'Нийтлэж байна...');
+  const fileInput = document.getElementById('f-img-file');
+  let finalImgUrl = document.getElementById('f-img').value.trim();
+
+  // If a file is selected, upload to Firebase Storage
+  if (fileInput.files.length > 0) {
+    try {
+      showToast('Зураг хуулж байна...');
+      const file = fileInput.files[0];
+      const storageRef = window.fsRef(window.storage, 'images/' + Date.now() + '_' + file.name);
+      await window.fsUploadBytes(storageRef, file);
+      finalImgUrl = await window.fsGetDownloadURL(storageRef);
+    } catch (err) {
+      console.error(err);
+      showToast('Зураг хуулахад алдаа гарлаа!');
+      return;
+    }
+  }
+
+  const postData = {
+    title, 
+    excerpt, 
+    body,
+    categories: selectedCats,
+    category: selectedCats[0], // fallback for old schema
+    imageUrl: finalImgUrl,
+    emoji: chosenEmoji
   };
-  showToast('Нийтлэж байна...');
-  await window.fsAddDoc(window.fsCollection(window.db, 'posts'), newPost);
+
+  if (editFirestoreId) {
+    await window.fsUpdateDoc(window.fsDoc(window.db, 'posts', editFirestoreId), postData);
+    showToast('Амжилттай шинэчлэгдлээ! ✓');
+  } else {
+    postData.id = Date.now();
+    postData.date = new Date().toISOString();
+    postData.color = BANNER_COLORS[Math.floor(Math.random()*BANNER_COLORS.length)];
+    postData.reactions = {like:0,love:0,wow:0};
+    postData.comments = [];
+    await window.fsAddDoc(window.fsCollection(window.db, 'posts'), postData);
+    showToast('Нийтлэл амжилттай нийтлэгдлээ! ✓');
+  }
   closeAdmin();
-  showToast('Нийтлэл амжилттай нийтлэгдлээ! ✓');
 }
 
 function closeAdmin() { document.getElementById('admin-overlay').classList.remove('open'); }
