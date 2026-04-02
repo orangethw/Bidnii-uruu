@@ -675,8 +675,8 @@ function renderPostForm(editingPost = null) {
     <label class="field-label">Нийтлэлийн агуулга </label>
     <textarea class="admin-textarea" id="f-body" placeholder="Нийтлэлийнхээ бүтэн агуулгыг энд бичнэ үү. Шүлэг бичихдээ мөр шилжүүлэхийн тулд Enter дарна уу...">${editingPost ? editingPost.body : ''}</textarea>
     
-    <label class="field-label">Зураг оруулах (URL холбоос) </label>
-    <input type="text" class="admin-input" id="f-img" placeholder="https://..." value="${editingPost ? (editingPost.imageUrl || '') : ''}">
+    <label class="field-label">Зургийн URL холбоос </label>
+    <input class="admin-input" id="f-img" placeholder="https://example.com/image.jpg" value="${editingPost ? (editingPost.imageUrl || '') : ''}">
     
     <label class="field-label">Нүүр дүрс — зураг байхгүй бол доороос сонгоно уу</label>
     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
@@ -701,7 +701,7 @@ async function publishPost(editFirestoreId = '') {
   if (selectedCats.length === 0) { showToast('Ядаж нэг ангилал сонгоно уу!'); return; }
 
   showToast(editFirestoreId ? 'Хадгалж байна...' : 'Нийтлэж байна...');
-  let finalImgUrl = document.getElementById('f-img').value.trim();
+  const finalImgUrl = document.getElementById('f-img').value.trim();
 
   const postData = {
     title, 
