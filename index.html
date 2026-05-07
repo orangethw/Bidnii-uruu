@@ -40,6 +40,11 @@
   nav a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; letter-spacing: 0.05em; white-space: nowrap; transition: color 0.2s; cursor: pointer; font-weight: 500; text-transform: uppercase; }
   nav a:hover, nav a.active { color: var(--accent); font-weight: 600; }
 
+  /* Search Bar */
+  .search-bar { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-main); border-bottom: 1px solid var(--border); padding: 1rem 2rem; z-index: 99; }
+  .search-bar input { width: 100%; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 1rem; background: var(--bg-main); color: var(--text-main); }
+  .search-bar input:focus { outline: none; border-color: var(--text-muted); }
+
   /* Banner Slider */
   .banner { position: relative; height: 500px; overflow: hidden; background: var(--bg-sec); }
   .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; display: flex; align-items: center; justify-content: center; }
@@ -152,6 +157,10 @@
   .empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
   .empty-state h3 { font-family: 'Lora', serif; font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main); }
 
+  /* Scroll to top button */
+  #scroll-top { display: none; position: fixed; bottom: 2rem; right: 2rem; width: 44px; height: 44px; border-radius: 50%; background: var(--text-main); color: var(--bg-main); border: none; cursor: pointer; font-size: 1.3rem; z-index: 500; box-shadow: 0 2px 10px rgba(0,0,0,0.2); transition: all 0.3s; align-items: center; justify-content: center; }
+  #scroll-top:hover { background: var(--accent-hover); }
+
   @media (max-width: 768px) {
     .grid { grid-template-columns: 1fr; }
     .card-featured { grid-column: span 1; grid-template-columns: 1fr; }
@@ -169,7 +178,7 @@
 </head>
 <body>
 
-<header>
+<header style="position:sticky;top:0;z-index:100;">
   <div class="header-top">
     <div class="logo-container" onclick="goHome()">
       <div class="logo">Бидний <span>өрөө</span></div>
@@ -177,8 +186,13 @@
     </div>
     <div class="header-date" id="header-date"></div>
     <div class="header-actions">
+      <button class="btn btn-outline" onclick="toggleSearch()">🔍</button>
       <button class="btn btn-outline" onclick="openAdmin()">✍ Нийтлэх</button>
     </div>
+  </div>
+  <!-- Search bar (hidden by default) -->
+  <div class="search-bar" id="search-bar">
+    <input type="text" id="search-input" placeholder="Нийтлэл хайх..." oninput="doSearch(this.value)">
   </div>
   <nav id="main-nav">
     <a class="active" onclick="filterCat('Бүгд')">Бүгд</a>
@@ -237,6 +251,9 @@
   </div>
 </div>
 
+<!-- Дээш гарах товч -->
+<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
 <div class="toast" id="toast"></div>
 
 <footer>
@@ -268,7 +285,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// Make db and Firestore functions available globally
 window.db = db;
 window.storage = storage;
 window.fsCollection = collection;
@@ -304,7 +320,6 @@ const BANNER_COLORS = ['#3a3a3a','#2c2c2c','#4a4a4a','#1f1f1f','#2a2a2a'];
 const MONTHS_MN = ['1-р сарын','2-р сарын','3-р сарын','4-р сарын','5-р сарын','6-р сарын','7-р сарын','8-р сарын','9-р сарын','10-р сарын','11-р сарын','12-р сарын'];
 const DAYS_MN = ['Ням','Даваа','Мягмар','Лхагва','Пүрэв','Баасан','Бямба'];
 
-// Wait for Firebase module to load, then init
 function waitForFirebase(cb, retries = 30) {
   if (window.db) { cb(); }
   else if (retries > 0) { setTimeout(() => waitForFirebase(cb, retries - 1), 100); }
@@ -316,6 +331,12 @@ window.onload = () => {
   document.getElementById('header-date').textContent = `${now.getFullYear()} оны ${MONTHS_MN[now.getMonth()]} ${now.getDate()}, ${DAYS_MN[now.getDay()]} гариг`;
   showToast('Өгөгдөл ачааллаж байна...');
 
+  // --- 1. Дээш гарах товч: scroll event ---
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('scroll-top');
+    btn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+  });
+
   waitForFirebase(() => {
     const q = window.fsQuery(window.fsCollection(window.db, 'posts'), window.fsOrderBy('date', 'desc'));
     window.fsOnSnapshot(q, (snapshot) => {
@@ -324,6 +345,12 @@ window.onload = () => {
         seedPosts();
       } else {
         renderAll();
+        // --- 2. Хуудас ачаалахад hash шалгаж нийтлэл нээх ---
+        const hash = window.location.hash;
+        if (hash.startsWith('#post-')) {
+          const id = parseInt(hash.replace('#post-', ''));
+          if (id) openArticle(id);
+        }
         if (currentPost) {
            const updatedPost = posts.find(p => p.firestoreId === currentPost.firestoreId);
            if (updatedPost) {
@@ -490,6 +517,8 @@ function smallCard(p) {
 function openArticle(id) {
   currentPost = posts.find(p => p.id === id);
   if (!currentPost) return;
+  // --- 3. Нийтлэл нээхэд URL-д hash нэм ---
+  window.location.hash = 'post-' + id;
   document.getElementById('home-view').style.display = 'none';
   document.getElementById('banner').style.display = 'none';
   document.getElementById('article-view').classList.add('open');
@@ -498,6 +527,8 @@ function openArticle(id) {
 }
 
 function closeArticle() {
+  // --- 3. Буцахад hash цэвэрлэх ---
+  history.pushState('', '', window.location.pathname);
   document.getElementById('home-view').style.display = 'block';
   document.getElementById('banner').style.display = 'block';
   document.getElementById('article-view').classList.remove('open');
@@ -524,6 +555,8 @@ function renderArticle() {
     <p class="article-subtitle">${p.excerpt}</p>
     <div class="article-byline">
       <span>Бидний өрөө</span><span>·</span><span>${formatDate(p.date)}</span>
+      <span>·</span>
+      <button onclick="copyLink()" style="background:none;border:1px solid var(--border);border-radius:100px;padding:0.3rem 0.9rem;cursor:pointer;font-size:0.8rem;font-family:'Inter',sans-serif;color:var(--text-muted);transition:all 0.2s;" onmouseover="this.style.borderColor='var(--text-main)';this.style.color='var(--text-main)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">🔗 Холбоос хуулах</button>
     </div>
   `;
   document.getElementById('article-hero-container').innerHTML = p.videoUrl
@@ -540,6 +573,12 @@ function renderArticle() {
   document.getElementById('article-body-text').innerHTML = (p.body||'').replace(/\n/g, '<br>');
   renderReactions();
   renderComments();
+}
+
+// --- 4. Холбоос хуулах функц ---
+function copyLink() {
+  const url = window.location.origin + window.location.pathname + '#post-' + currentPost.id;
+  navigator.clipboard.writeText(url).then(() => showToast('Холбоос хуулагдлаа! 🔗'));
 }
 
 async function deletePost(firestoreId) {
@@ -606,8 +645,8 @@ async function submitComment() {
   if (!text) { showToast('Сэтгэгдэлээ бичнэ үү!'); return; }
   if (!currentPost.comments) currentPost.comments = [];
   const now = new Date();
-const dateStr = `${now.getFullYear()} оны ${MONTHS_MN[now.getMonth()]} ${now.getDate()}, ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-currentPost.comments.push({ name: name||'Нэргүй', text, date: dateStr });
+  const dateStr = `${now.getFullYear()} оны ${MONTHS_MN[now.getMonth()]} ${now.getDate()}, ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  currentPost.comments.push({ name: name||'Нэргүй', text, date: dateStr });
   await savePostToFirestore(currentPost);
   document.getElementById('comment-text').value = '';
   document.getElementById('comment-name').value = '';
@@ -707,7 +746,6 @@ function renderPostForm(editingPost = null) {
       <button class="btn-cancel" onclick="closeAdmin()">Болих</button>
       <button class="btn-submit" onclick="publishPost('${editingPost ? editingPost.firestoreId : ''}')">✍ ${editingPost ? 'Хадгалах' : 'Нийтлэх'}</button>
     </div>`;
-  // Show/hide video field based on current category selection
   updateVideoField();
 }
 
@@ -736,7 +774,7 @@ async function publishPost(editFirestoreId = '') {
     excerpt, 
     body,
     categories: selectedCats,
-    category: selectedCats[0], // fallback for old schema
+    category: selectedCats[0],
     imageUrl: finalImgUrl,
     videoUrl: finalVideoUrl,
     emoji: chosenEmoji
@@ -761,10 +799,8 @@ function closeAdmin() { document.getElementById('admin-overlay').classList.remov
 
 function getDriveEmbedUrl(url) {
   if (!url) return '';
-  // /file/d/FILE_ID/view format
   const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (m1) return `https://drive.google.com/file/d/${m1[1]}/preview`;
-  // ?id=FILE_ID format
   const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (m2) return `https://drive.google.com/file/d/${m2[1]}/preview`;
   return url;
@@ -782,6 +818,35 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// --- Хайх функцууд ---
+function toggleSearch() {
+  const bar = document.getElementById('search-bar');
+  const isOpen = bar.style.display === 'block';
+  bar.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    document.getElementById('search-input').value = '';
+    setTimeout(() => document.getElementById('search-input').focus(), 50);
+    renderGrid();
+  }
+}
+
+function doSearch(val) {
+  const q = val.toLowerCase().trim();
+  if (!q) { renderGrid(); return; }
+  const results = posts.filter(p =>
+    p.title.toLowerCase().includes(q) ||
+    p.excerpt.toLowerCase().includes(q) ||
+    (p.body||'').toLowerCase().includes(q)
+  );
+  const el = document.getElementById('posts-grid');
+  document.getElementById('section-title').textContent = `"${val}" — ${results.length} илэрц`;
+  if (!results.length) {
+    el.innerHTML = '<div class="empty-state"><h3>Илэрц олдсонгүй</h3><p>Өөр түлхүүр үгээр хайж үзнэ үү</p></div>';
+    return;
+  }
+  el.innerHTML = `<div class="grid">${results.map(p => smallCard(p)).join('')}</div>`;
 }
 
 document.getElementById('admin-overlay').addEventListener('click', function(e) { if(e.target===this) closeAdmin(); });
