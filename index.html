@@ -605,7 +605,9 @@ async function submitComment() {
   const name = document.getElementById('comment-name').value.trim();
   if (!text) { showToast('Сэтгэгдэлээ бичнэ үү!'); return; }
   if (!currentPost.comments) currentPost.comments = [];
-  currentPost.comments.push({ name: name||'Нэргүй', text, date: 'Дөнгөж сая' });
+  const now = new Date();
+const dateStr = `${now.getFullYear()} оны ${MONTHS_MN[now.getMonth()]} ${now.getDate()}, ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+currentPost.comments.push({ name: name||'Нэргүй', text, date: dateStr });
   await savePostToFirestore(currentPost);
   document.getElementById('comment-text').value = '';
   document.getElementById('comment-name').value = '';
