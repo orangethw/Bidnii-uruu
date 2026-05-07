@@ -560,8 +560,6 @@ function renderArticle() {
     <p class="article-subtitle">${p.excerpt}</p>
     <div class="article-byline">
       <span>Бидний өрөө</span><span>·</span><span>${formatDate(p.date)}</span>
-      <span>·</span>
-      <button onclick="copyLink()" style="background:none;border:1px solid var(--border);border-radius:100px;padding:0.3rem 0.9rem;cursor:pointer;font-size:0.8rem;font-family:'Inter',sans-serif;color:var(--text-muted);transition:all 0.2s;" onmouseover="this.style.borderColor='var(--text-main)';this.style.color='var(--text-main)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">🔗 Холбоос хуулах</button>
     </div>
   `;
   document.getElementById('article-hero-container').innerHTML = p.videoUrl
@@ -578,12 +576,6 @@ function renderArticle() {
   document.getElementById('article-body-text').innerHTML = (p.body||'').replace(/\n/g, '<br>');
   renderReactions();
   renderComments();
-}
-
-// --- 4. Холбоос хуулах функц ---
-function copyLink() {
-  const url = window.location.origin + window.location.pathname + '#post-' + currentPost.id;
-  navigator.clipboard.writeText(url).then(() => showToast('Холбоос хуулагдлаа! 🔗'));
 }
 
 async function deletePost(firestoreId) {
