@@ -40,11 +40,6 @@
   nav a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; letter-spacing: 0.05em; white-space: nowrap; transition: color 0.2s; cursor: pointer; font-weight: 500; text-transform: uppercase; }
   nav a:hover, nav a.active { color: var(--accent); font-weight: 600; }
 
-  /* Search Bar */
-  .search-bar { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-main); border-bottom: 1px solid var(--border); padding: 1rem 2rem; z-index: 99; }
-  .search-bar input { width: 100%; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 1rem; background: var(--bg-main); color: var(--text-main); }
-  .search-bar input:focus { outline: none; border-color: var(--text-muted); }
-
   /* Banner Slider */
   .banner { position: relative; height: 500px; overflow: hidden; background: var(--bg-sec); }
   .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; display: flex; align-items: center; justify-content: center; }
@@ -186,13 +181,8 @@
     </div>
     <div class="header-date" id="header-date"></div>
     <div class="header-actions">
-      <button class="btn btn-outline" onclick="toggleSearch()">🔍</button>
       <button class="btn btn-outline" onclick="openAdmin()">✍ Нийтлэх</button>
     </div>
-  </div>
-  <!-- Search bar (hidden by default) -->
-  <div class="search-bar" id="search-bar">
-    <input type="text" id="search-input" placeholder="Нийтлэл хайх..." oninput="doSearch(this.value)">
   </div>
   <nav id="main-nav">
     <a class="active" onclick="filterCat('Бүгд')">Бүгд</a>
@@ -345,12 +335,28 @@ window.onload = () => {
         seedPosts();
       } else {
         renderAll();
-        // --- 2. Хуудас ачаалахад hash шалгаж нийтлэл нээх ---
+        // Хуудас ачаалахад hash шалгаж нийтлэл нээх
         const hash = window.location.hash;
         if (hash.startsWith('#post-')) {
           const id = parseInt(hash.replace('#post-', ''));
-          if (id) openArticle(id);
+          if (id) openArticle(id, false);
         }
+        // Browser буцах/урагш товчийг зохицуулах
+        window.addEventListener('popstate', (e) => {
+          if (e.state && e.state.postId) {
+            openArticle(e.state.postId, false);
+          } else {
+            currentPost = null;
+            document.getElementById('home-view').style.display = 'block';
+            document.getElementById('banner').style.display = 'block';
+            document.getElementById('article-view').classList.remove('open');
+            currentCat = 'Бүгд';
+            updateNavState();
+            renderGrid();
+            document.getElementById('section-title').textContent = 'Сүүлийн нийтлэлүүд';
+            window.scrollTo(0, 0);
+          }
+        });
         if (currentPost) {
            const updatedPost = posts.find(p => p.firestoreId === currentPost.firestoreId);
            if (updatedPost) {
@@ -514,11 +520,11 @@ function smallCard(p) {
   </div>`;
 }
 
-function openArticle(id) {
+function openArticle(id, pushHistory = true) {
   currentPost = posts.find(p => p.id === id);
   if (!currentPost) return;
-  // --- 3. Нийтлэл нээхэд URL-д hash нэм ---
-  window.location.hash = 'post-' + id;
+  // pushState ашиглан browser буцах товч ажиллуулна
+  if (pushHistory) history.pushState({ postId: id }, '', '#post-' + id);
   document.getElementById('home-view').style.display = 'none';
   document.getElementById('banner').style.display = 'none';
   document.getElementById('article-view').classList.add('open');
@@ -526,9 +532,8 @@ function openArticle(id) {
   renderArticle();
 }
 
-function closeArticle() {
-  // --- 3. Буцахад hash цэвэрлэх ---
-  history.pushState('', '', window.location.pathname);
+function closeArticle(pushHistory = true) {
+  if (pushHistory) history.pushState({ postId: null }, '', window.location.pathname);
   document.getElementById('home-view').style.display = 'block';
   document.getElementById('banner').style.display = 'block';
   document.getElementById('article-view').classList.remove('open');
@@ -818,35 +823,6 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-// --- Хайх функцууд ---
-function toggleSearch() {
-  const bar = document.getElementById('search-bar');
-  const isOpen = bar.style.display === 'block';
-  bar.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen) {
-    document.getElementById('search-input').value = '';
-    setTimeout(() => document.getElementById('search-input').focus(), 50);
-    renderGrid();
-  }
-}
-
-function doSearch(val) {
-  const q = val.toLowerCase().trim();
-  if (!q) { renderGrid(); return; }
-  const results = posts.filter(p =>
-    p.title.toLowerCase().includes(q) ||
-    p.excerpt.toLowerCase().includes(q) ||
-    (p.body||'').toLowerCase().includes(q)
-  );
-  const el = document.getElementById('posts-grid');
-  document.getElementById('section-title').textContent = `"${val}" — ${results.length} илэрц`;
-  if (!results.length) {
-    el.innerHTML = '<div class="empty-state"><h3>Илэрц олдсонгүй</h3><p>Өөр түлхүүр үгээр хайж үзнэ үү</p></div>';
-    return;
-  }
-  el.innerHTML = `<div class="grid">${results.map(p => smallCard(p)).join('')}</div>`;
 }
 
 document.getElementById('admin-overlay').addEventListener('click', function(e) { if(e.target===this) closeAdmin(); });
