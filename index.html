@@ -152,9 +152,7 @@
   .empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
   .empty-state h3 { font-family: 'Lora', serif; font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main); }
 
-  /* Scroll to top button */
-  #scroll-top { display: none; position: fixed; bottom: 2rem; right: 2rem; width: 44px; height: 44px; border-radius: 50%; background: var(--text-main); color: var(--bg-main); border: none; cursor: pointer; font-size: 1.3rem; z-index: 500; box-shadow: 0 2px 10px rgba(0,0,0,0.2); transition: all 0.3s; align-items: center; justify-content: center; }
-  #scroll-top:hover { background: var(--accent-hover); }
+
 
   @media (max-width: 768px) {
     .grid { grid-template-columns: 1fr; }
@@ -241,9 +239,6 @@
   </div>
 </div>
 
-<!-- Дээш гарах товч -->
-<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
-
 <div class="toast" id="toast"></div>
 
 <footer>
@@ -321,12 +316,7 @@ window.onload = () => {
   document.getElementById('header-date').textContent = `${now.getFullYear()} оны ${MONTHS_MN[now.getMonth()]} ${now.getDate()}, ${DAYS_MN[now.getDay()]} гариг`;
   showToast('Өгөгдөл ачааллаж байна...');
 
-  // --- 1. Дээш гарах товч: scroll event ---
-  window.addEventListener('scroll', () => {
-    const btn = document.getElementById('scroll-top');
-    btn.style.display = window.scrollY > 400 ? 'flex' : 'none';
-  });
-
+  // --- Firebase listener ---
   waitForFirebase(() => {
     const q = window.fsQuery(window.fsCollection(window.db, 'posts'), window.fsOrderBy('date', 'desc'));
     window.fsOnSnapshot(q, (snapshot) => {
@@ -334,7 +324,13 @@ window.onload = () => {
       if (posts.length === 0) {
         seedPosts();
       } else {
-        renderAll();
+        if (!currentPost) {
+          renderAll();
+        } else {
+          // Нийтлэл нээлттэй байх үед зөвхөн banner/grid-г арын дэвсгэрт шинэчилнэ
+          renderBanner();
+          renderGrid();
+        }
         // Хуудас ачаалахад hash шалгаж нийтлэл нээх
         const hash = window.location.hash;
         if (hash.startsWith('#post-')) {
@@ -361,7 +357,9 @@ window.onload = () => {
            const updatedPost = posts.find(p => p.firestoreId === currentPost.firestoreId);
            if (updatedPost) {
               currentPost = updatedPost;
-              renderArticle();
+              // Зөвхөн reaction болон comment-г шинэчилнэ, бүтэн нийтлэл дахин render хийхгүй
+              renderReactions();
+              renderComments();
            }
         }
       }
@@ -559,7 +557,7 @@ function renderArticle() {
     <h1 class="article-title-h">${p.title}</h1>
     <p class="article-subtitle">${p.excerpt}</p>
     <div class="article-byline">
-      </span><span>${formatDate(p.date)}</span>
+      <span>Бидний өрөө</span><span>·</span><span>${formatDate(p.date)}</span>
     </div>
   `;
   document.getElementById('article-hero-container').innerHTML = p.videoUrl
