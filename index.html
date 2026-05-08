@@ -351,7 +351,8 @@ window.onload = () => {
           if (id) openArticle(id, false);
         }
       } else {
-        // Дараагийн шинэчлэлт (reaction, comment) — scroll хийхгүй
+        // Дараагийн шинэчлэлт (reaction, comment) — scroll хадгалж сэргээнэ
+        const savedScroll = window.scrollY;
         renderBanner();
         renderGrid();
         if (currentPost) {
@@ -362,6 +363,7 @@ window.onload = () => {
             renderComments();
           }
         }
+        requestAnimationFrame(() => window.scrollTo(0, savedScroll));
       }
     });
   });
@@ -407,8 +409,10 @@ async function seedPosts() {
 
 async function savePostToFirestore(post) {
   if (!post.firestoreId) return;
+  const scrollY = window.scrollY;
   const { firestoreId, ...data } = post;
   await window.fsUpdateDoc(window.fsDoc(window.db, 'posts', firestoreId), data);
+  requestAnimationFrame(() => window.scrollTo(0, scrollY));
 }
 
 function renderAll() { renderBanner(); renderGrid(); }
