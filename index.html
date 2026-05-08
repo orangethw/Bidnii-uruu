@@ -316,51 +316,51 @@ window.onload = () => {
   document.getElementById('header-date').textContent = `${now.getFullYear()} оны ${MONTHS_MN[now.getMonth()]} ${now.getDate()}, ${DAYS_MN[now.getDay()]} гариг`;
   showToast('Өгөгдөл ачааллаж байна...');
 
+  // Browser буцах/урагш товчийг зохицуулах — нэг удаа бүртгэнэ
+  window.addEventListener('popstate', (e) => {
+    if (e.state && e.state.postId) {
+      openArticle(e.state.postId, false);
+    } else {
+      currentPost = null;
+      document.getElementById('home-view').style.display = 'block';
+      document.getElementById('banner').style.display = 'block';
+      document.getElementById('article-view').classList.remove('open');
+      currentCat = 'Бүгд';
+      updateNavState();
+      renderGrid();
+      document.getElementById('section-title').textContent = 'Сүүлийн нийтлэлүүд';
+      window.scrollTo(0, 0);
+    }
+  });
+
   // --- Firebase listener ---
+  let firstLoad = true;
   waitForFirebase(() => {
     const q = window.fsQuery(window.fsCollection(window.db, 'posts'), window.fsOrderBy('date', 'desc'));
     window.fsOnSnapshot(q, (snapshot) => {
       posts = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
       if (posts.length === 0) {
         seedPosts();
-      } else {
-        if (!currentPost) {
-          renderAll();
-        } else {
-          // Нийтлэл нээлттэй байх үед зөвхөн banner/grid-г арын дэвсгэрт шинэчилнэ
-          renderBanner();
-          renderGrid();
-        }
-        // Хуудас ачаалахад hash шалгаж нийтлэл нээх
+      } else if (firstLoad) {
+        // Эхний ачаалалт — бүгдийг render хийж hash шалгана
+        firstLoad = false;
+        renderAll();
         const hash = window.location.hash;
         if (hash.startsWith('#post-')) {
           const id = parseInt(hash.replace('#post-', ''));
           if (id) openArticle(id, false);
         }
-        // Browser буцах/урагш товчийг зохицуулах
-        window.addEventListener('popstate', (e) => {
-          if (e.state && e.state.postId) {
-            openArticle(e.state.postId, false);
-          } else {
-            currentPost = null;
-            document.getElementById('home-view').style.display = 'block';
-            document.getElementById('banner').style.display = 'block';
-            document.getElementById('article-view').classList.remove('open');
-            currentCat = 'Бүгд';
-            updateNavState();
-            renderGrid();
-            document.getElementById('section-title').textContent = 'Сүүлийн нийтлэлүүд';
-            window.scrollTo(0, 0);
-          }
-        });
+      } else {
+        // Дараагийн шинэчлэлт (reaction, comment) — scroll хийхгүй
+        renderBanner();
+        renderGrid();
         if (currentPost) {
-           const updatedPost = posts.find(p => p.firestoreId === currentPost.firestoreId);
-           if (updatedPost) {
-              currentPost = updatedPost;
-              // Зөвхөн reaction болон comment-г шинэчилнэ, бүтэн нийтлэл дахин render хийхгүй
-              renderReactions();
-              renderComments();
-           }
+          const updatedPost = posts.find(p => p.firestoreId === currentPost.firestoreId);
+          if (updatedPost) {
+            currentPost = updatedPost;
+            renderReactions();
+            renderComments();
+          }
         }
       }
     });
